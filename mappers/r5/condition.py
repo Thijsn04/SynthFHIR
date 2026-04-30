@@ -1,6 +1,9 @@
 """R5 Condition resource mapper. Spec: https://hl7.org/fhir/R5/condition.html
 
-R5 difference from R4: canonical profile URL only.
+R5 structural differences from R4:
+  1. Condition.recorder and Condition.asserter removed; replaced by participant[].
+  2. Condition.clinicalStatus minimum cardinality raised to 1 (always required).
+  3. Condition.evidence redesigned from BackboneElement to CodeableReference.
 """
 from mappers._helpers import build_meta, ref
 
@@ -59,5 +62,19 @@ def map_condition(cond: dict) -> dict:
         "subject": ref("Patient", cond["patient_id"]),
         "onsetDateTime": cond["onset_date"],
         "recordedDate": cond["recorded_date"],
-        "recorder": ref("Practitioner", cond["practitioner_id"]),
+        # R5: recorder removed; use participant[] with provenance-participant-type
+        "participant": [
+            {
+                "function": {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/provenance-participant-type",
+                            "code": "author",
+                            "display": "Author",
+                        }
+                    ]
+                },
+                "actor": ref("Practitioner", cond["practitioner_id"]),
+            }
+        ],
     }
