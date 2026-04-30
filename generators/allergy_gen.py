@@ -1,3 +1,12 @@
+"""Allergy/intolerance generator.
+
+70% of patients have no allergies; the remaining 30% receive 1-3 entries
+drawn from a fixed catalog of medication, food, and environmental allergens.
+All substance and reaction codes are SNOMED CT.
+Output keys: id, patient_id, practitioner_id, type, substance_code,
+substance_display, category, criticality, reaction_code, reaction_display,
+reaction_severity, onset_date, recorded_date.
+"""
 import random
 import uuid
 from datetime import date, timedelta

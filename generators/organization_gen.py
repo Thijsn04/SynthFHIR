@@ -1,3 +1,9 @@
+"""Organization generator.
+
+Produces raw organization dicts representing healthcare facilities.
+Output keys: id, name, type_code, type_display, phone, email,
+address_line, city, state, postal_code, country.
+"""
 import random
 import uuid
 

@@ -1,4 +1,5 @@
 fhirdocs
 __pycache__/
+.claude
 *.pyc
 *.pyo

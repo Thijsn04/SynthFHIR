@@ -1,3 +1,13 @@
+"""Observation generator.
+
+Generates vitals and lab results for a single encounter. Every encounter always
+receives the four baseline vitals (systolic BP, diastolic BP, heart rate, body
+temperature). Active conditions contribute their linked observation types, and
+values are biased toward the abnormal range for those conditions.
+Output keys: id, patient_id, encounter_id, practitioner_id, loinc_code, display,
+category_code, category_display, status, effective_datetime, value, unit,
+ucum_code, interpretation_code, interpretation_display.
+"""
 import random
 import uuid
 

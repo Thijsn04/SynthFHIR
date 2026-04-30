@@ -1,3 +1,12 @@
+"""Encounter generator.
+
+Produces raw encounter dicts representing clinic visits. Encounters are
+randomly distributed across a configurable time window and linked to a
+patient, practitioner, and organization.
+Output keys: id, patient_id, practitioner_id, organization_id, status,
+class_code, class_display, type_code, type_display, start_datetime,
+end_datetime.
+"""
 import random
 import uuid
 from datetime import datetime, timedelta, timezone

@@ -1,3 +1,13 @@
+"""RelatedPerson generator.
+
+Generates family members and emergency contacts with age- and marital-status-aware
+logic: minors always get both parents, married adults have an 85% chance of a
+linked spouse, and any patient has a 60% chance of a named emergency contact.
+Related persons default to sharing the patient's address (same household).
+Output keys: id, patient_id, relationship_code, relationship_display, first_name,
+last_name, gender, birth_date, phone, email, address_line, city, state,
+postal_code, country.
+"""
 import random
 import uuid
 from datetime import date

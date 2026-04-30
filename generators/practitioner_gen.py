@@ -1,3 +1,11 @@
+"""Practitioner generator.
+
+Produces raw practitioner dicts with NPI, specialty (SNOMED CT), and
+qualification (HL7 v2-0360). Each practitioner is linked to one organization.
+Output keys: id, npi, prefix, first_name, last_name, gender, specialty_code,
+specialty_display, qualification_code, qualification_display, phone, email,
+organization_id.
+"""
 import random
 import uuid
 

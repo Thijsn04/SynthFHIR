@@ -1,3 +1,13 @@
+"""Condition generator.
+
+Generates 1-2 conditions per patient. When a condition_filter is supplied, that
+condition is always the primary diagnosis; a random comorbidity is added ~40% of
+the time. The `linked_obs_types` list on each condition dict drives which
+observation types are generated for that patient's encounters.
+Output keys: id, patient_id, practitioner_id, snomed_code, icd10_code, display,
+category_code, category_display, clinical_status, verification_status,
+onset_date, recorded_date, linked_obs_types.
+"""
 import random
 import uuid
 from datetime import date, timedelta

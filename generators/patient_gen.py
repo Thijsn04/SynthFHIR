@@ -1,3 +1,14 @@
+"""Patient generator.
+
+Produces raw patient dicts with demographics, contact details, and identifiers.
+The output dict is version-agnostic; R4/R5 mappers in mappers/r4/ and mappers/r5/
+convert it to a spec-compliant FHIR Patient resource.
+
+Output keys: id, mrn, prefix, first_name, middle_name, last_name, suffix,
+gender, birth_date, deceased, marital_code, marital_display, phone_home,
+phone_mobile, email, address_line, city, state, postal_code, country,
+language_code, language_display.
+"""
 import random
 import uuid
 
