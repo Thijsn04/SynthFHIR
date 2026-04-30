@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SynthFHIR Test UI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    header { padding: 16px 24px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.25rem; font-weight: 600; color: #63b3ed; }
+    header span { font-size: 0.8rem; color: #718096; background: #1a202c; padding: 2px 8px; border-radius: 999px; border: 1px solid #2d3748; }
+    .layout { display: grid; grid-template-columns: 340px 1fr; height: calc(100vh - 57px); }
+    .sidebar { border-right: 1px solid #2d3748; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    .panel { background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; overflow: hidden; }
+    .panel-header { padding: 10px 14px; background: #171923; border-bottom: 1px solid #2d3748; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a0aec0; display: flex; align-items: center; gap: 6px; }
+    .panel-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    label { font-size: 0.8rem; color: #a0aec0; display: block; margin-bottom: 4px; }
+    input[type=number], select { width: 100%; background: #171923; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 7px 10px; font-size: 0.85rem; outline: none; }
+    input[type=number]:focus, select:focus { border-color: #63b3ed; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn { width: 100%; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #3182ce; color: #fff; }
+    .btn-secondary { background: #2d3748; color: #e2e8f0; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .endpoint-btn { padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #2d3748; background: #171923; color: #a0aec0; transition: all 0.15s; width: 100%; text-align: left; }
+    .endpoint-btn:hover { background: #2d3748; color: #e2e8f0; }
+    .endpoint-btn.active { border-color: #63b3ed; color: #63b3ed; background: #1a3a52; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-right: 6px; }
+    .badge-get { background: #276749; color: #9ae6b4; }
+    .main { display: flex; flex-direction: column; overflow: hidden; }
+    .toolbar { padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 10px; background: #171923; }
+    .url-bar { flex: 1; background: #0f1117; border: 1px solid #2d3748; border-radius: 6px; padding: 7px 12px; font-size: 0.8rem; color: #718096; font-family: monospace; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+    .status-ok { background: #276749; color: #9ae6b4; }
+    .status-err { background: #742a2a; color: #fc8181; }
+    .status-neutral { background: #2d3748; color: #a0aec0; }
+    .response-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .tabs { display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid #2d3748; background: #171923; }
+    .tab { padding: 6px 14px; font-size: 0.8rem; cursor: pointer; border-radius: 6px 6px 0 0; color: #718096; border: 1px solid transparent; border-bottom: none; }
+    .tab.active { color: #e2e8f0; background: #0f1117; border-color: #2d3748; }
+    .tab-content { flex: 1; overflow: auto; padding: 0; display: none; }
+    .tab-content.active { display: block; }
+    pre { padding: 16px; font-size: 0.78rem; line-height: 1.6; font-family: 'Consolas', 'Fira Code', monospace; white-space: pre-wrap; word-break: break-word; }
+    .spinner { display: none; width: 16px; height: 16px; border: 2px solid #2d3748; border-top-color: #63b3ed; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .stats { display: flex; gap: 16px; padding: 10px 16px; border-bottom: 1px solid #2d3748; font-size: 0.78rem; color: #718096; }
+    .stats span { display: flex; align-items: center; gap: 4px; }
+    .stats b { color: #a0aec0; }
+    .conditions-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .condition-tag { padding: 5px 8px; border-radius: 5px; font-size: 0.78rem; cursor: pointer; border: 1px solid #2d3748; background: #171923; color: #a0aec0; transition: all 0.12s; }
+    .condition-tag:hover { border-color: #63b3ed; color: #63b3ed; }
+    .condition-tag.selected { border-color: #63b3ed; color: #63b3ed; background: #1a3a52; }
+    .divider { border: none; border-top: 1px solid #2d3748; }
+    .hint { font-size: 0.72rem; color: #4a5568; }
+    .copy-btn { margin-left: auto; padding: 4px 10px; font-size: 0.72rem; background: #2d3748; border: 1px solid #4a5568; color: #a0aec0; border-radius: 5px; cursor: pointer; }
+    .copy-btn:hover { color: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>SynthFHIR</h1>
+  <span>Test UI</span>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Endpoint selector -->
+    <div class="panel">
+      <div class="panel-header">Endpoint</div>
+      <div class="panel-body">
+        <button class="endpoint-btn active" onclick="selectEndpoint('cohort')">
+          <span class="badge badge-get">GET</span>/api/generate/cohort
+        </button>
+        <button class="endpoint-btn" onclick="selectEndpoint('patient')">
+          <span class="badge badge-get">GET</span>/api/generate/patient
+        </button>
+        <button class="endpoint-btn" onclick="selectEndpoint('conditions')">
+          <span class="badge badge-get">GET</span>/api/conditions
+        </button>
+        <button class="endpoint-btn" onclick="selectEndpoint('observations')">
+          <span class="badge badge-get">GET</span>/api/observations
+        </button>
+      </div>
+    </div>
+
+    <!-- Server -->
+    <div class="panel">
+      <div class="panel-header">Server</div>
+      <div class="panel-body">
+        <div>
+          <label>Base URL</label>
+          <input type="text" id="baseUrl" value="http://localhost:8000" style="width:100%;background:#171923;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:7px 10px;font-size:0.85rem;outline:none;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Parameters -->
+    <div class="panel" id="paramsPanel">
+      <div class="panel-header">Parameters</div>
+      <div class="panel-body" id="paramsBody">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <button class="btn btn-primary" id="sendBtn" onclick="sendRequest()">Send Request</button>
+    <button class="btn btn-secondary" onclick="clearResponse()">Clear</button>
+
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="toolbar">
+      <span class="badge badge-get">GET</span>
+      <div class="url-bar" id="urlBar">—</div>
+      <div class="spinner" id="spinner"></div>
+      <div class="status-badge status-neutral" id="statusBadge">—</div>
+    </div>
+
+    <div class="stats" id="statsBar" style="display:none">
+      <span><b id="statTime">—</b> ms</span>
+      <span><b id="statSize">—</b> KB</span>
+      <span><b id="statResources">—</b> resources</span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('body')">Body</div>
+      <div class="tab" onclick="switchTab('pretty')">Pretty</div>
+      <button class="copy-btn" id="copyBtn" onclick="copyResponse()" style="display:none">Copy</button>
+    </div>
+
+    <div class="tab-content active" id="tab-body">
+      <pre id="responseRaw" style="color:#718096">Hit "Send Request" to see the response.</pre>
+    </div>
+    <div class="tab-content" id="tab-pretty">
+      <pre id="responsePretty" style="color:#718096"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentEndpoint = 'cohort';
+  let lastResponse = null;
+  let conditions = [];
+
+  const ENDPOINTS = {
+    cohort: {
+      path: '/api/generate/cohort',
+      params: ['count', 'version', 'age_min', 'age_max', 'condition', 'seed', 'num_practitioners', 'num_organizations'],
+    },
+    patient: {
+      path: '/api/generate/patient',
+      params: ['count', 'version', 'age_min', 'age_max', 'seed'],
+    },
+    conditions: { path: '/api/conditions', params: [] },
+    observations: { path: '/api/observations', params: [] },
+  };
+
+  const PARAM_DEFS = {
+    count:              { label: 'count', type: 'number', default: 10, min: 1, max: 1000 },
+    version:            { label: 'version', type: 'select', options: ['R4', 'R5'], default: 'R4' },
+    age_min:            { label: 'age_min', type: 'number', default: 0, min: 0, max: 119 },
+    age_max:            { label: 'age_max', type: 'number', default: 80, min: 1, max: 120 },
+    condition:          { label: 'condition (optional)', type: 'condition-picker', default: '' },
+    seed:               { label: 'seed (optional)', type: 'number', default: '', min: 0 },
+    num_practitioners:  { label: 'num_practitioners', type: 'number', default: 3, min: 1, max: 50 },
+    num_organizations:  { label: 'num_organizations', type: 'number', default: 1, min: 1, max: 10 },
+  };
+
+  function selectEndpoint(name) {
+    currentEndpoint = name;
+    document.querySelectorAll('.endpoint-btn').forEach((b, i) => {
+      b.classList.toggle('active', ['cohort','patient','conditions','observations'][i] === name);
+    });
+    renderParams();
+    updateUrlBar();
+  }
+
+  function renderParams() {
+    const body = document.getElementById('paramsBody');
+    const params = ENDPOINTS[currentEndpoint].params;
+    if (params.length === 0) {
+      body.innerHTML = '<p class="hint">No parameters for this endpoint.</p>';
+      return;
+    }
+    body.innerHTML = '';
+    params.forEach(p => {
+      const def = PARAM_DEFS[p];
+      const wrapper = document.createElement('div');
+      const lbl = document.createElement('label');
+      lbl.textContent = def.label;
+      wrapper.appendChild(lbl);
+
+      if (def.type === 'select') {
+        const sel = document.createElement('select');
+        sel.id = 'param_' + p;
+        def.options.forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o; opt.textContent = o;
+          if (o === def.default) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.onchange = updateUrlBar;
+        wrapper.appendChild(sel);
+
+      } else if (def.type === 'condition-picker') {
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.id = 'param_' + p;
+        hiddenInput.value = def.default;
+        wrapper.appendChild(hiddenInput);
+
+        const list = document.createElement('div');
+        list.className = 'conditions-list';
+        list.id = 'conditionList';
+        if (conditions.length === 0) {
+          list.innerHTML = '<span class="hint">Loading conditions...</span>';
+          fetchConditions().then(() => renderConditionTags(list, hiddenInput));
+        } else {
+          renderConditionTags(list, hiddenInput);
+        }
+        wrapper.appendChild(list);
+
+      } else {
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.id = 'param_' + p;
+        inp.value = def.default;
+        if (def.min !== undefined) inp.min = def.min;
+        if (def.max !== undefined) inp.max = def.max;
+        inp.oninput = updateUrlBar;
+        wrapper.appendChild(inp);
+      }
+      body.appendChild(wrapper);
+    });
+    updateUrlBar();
+  }
+
+  function renderConditionTags(container, hiddenInput) {
+    container.innerHTML = '';
+    const noneTag = document.createElement('div');
+    noneTag.className = 'condition-tag selected';
+    noneTag.textContent = 'Any';
+    noneTag.dataset.value = '';
+    noneTag.onclick = () => selectConditionTag('', container, hiddenInput);
+    container.appendChild(noneTag);
+
+    conditions.forEach(c => {
+      const tag = document.createElement('div');
+      tag.className = 'condition-tag';
+      tag.textContent = c.display;
+      tag.dataset.value = c.key;
+      tag.title = c.key;
+      tag.onclick = () => selectConditionTag(c.key, container, hiddenInput);
+      container.appendChild(tag);
+    });
+  }
+
+  function selectConditionTag(value, container, hiddenInput) {
+    hiddenInput.value = value;
+    container.querySelectorAll('.condition-tag').forEach(t => {
+      t.classList.toggle('selected', t.dataset.value === value);
+    });
+    updateUrlBar();
+  }
+
+  async function fetchConditions() {
+    try {
+      const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+      const res = await fetch(base + '/api/conditions');
+      const data = await res.json();
+      conditions = data;
+    } catch (e) {
+      conditions = [];
+    }
+  }
+
+  function getParamValues() {
+    const params = ENDPOINTS[currentEndpoint].params;
+    const out = {};
+    params.forEach(p => {
+      const el = document.getElementById('param_' + p);
+      if (!el) return;
+      const v = el.value;
+      if (v !== '' && v !== null) out[p] = v;
+    });
+    return out;
+  }
+
+  function buildUrl(includeBase = true) {
+    const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+    const path = ENDPOINTS[currentEndpoint].path;
+    const vals = getParamValues();
+    const qs = new URLSearchParams();
+    Object.entries(vals).forEach(([k, v]) => { if (v !== '') qs.set(k, v); });
+    const qstr = qs.toString();
+    return (includeBase ? base : '') + path + (qstr ? '?' + qstr : '');
+  }
+
+  function updateUrlBar() {
+    document.getElementById('urlBar').textContent = buildUrl();
+  }
+
+  async function sendRequest() {
+    const btn = document.getElementById('sendBtn');
+    const spinner = document.getElementById('spinner');
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    document.getElementById('statusBadge').className = 'status-badge status-neutral';
+    document.getElementById('statusBadge').textContent = '…';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('copyBtn').style.display = 'none';
+
+    const url = buildUrl();
+    const t0 = performance.now();
+
+    try {
+      const res = await fetch(url);
+      const elapsed = Math.round(performance.now() - t0);
+      const text = await res.text();
+      const sizeKb = (new TextEncoder().encode(text).length / 1024).toFixed(1);
+
+      lastResponse = text;
+      document.getElementById('responseRaw').textContent = text;
+
+      let resourceCount = '—';
+      try {
+        const json = JSON.parse(text);
+        if (Array.isArray(json)) resourceCount = json.length;
+        else if (json.entry) resourceCount = json.entry.length;
+        document.getElementById('responsePretty').textContent = JSON.stringify(json, null, 2);
+        applySyntaxColors('responsePretty');
+      } catch { document.getElementById('responsePretty').textContent = text; }
+
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = res.status + ' ' + res.statusText;
+      badge.className = 'status-badge ' + (res.ok ? 'status-ok' : 'status-err');
+
+      document.getElementById('statTime').textContent = elapsed;
+      document.getElementById('statSize').textContent = sizeKb;
+      document.getElementById('statResources').textContent = resourceCount;
+      document.getElementById('statsBar').style.display = 'flex';
+      document.getElementById('copyBtn').style.display = 'block';
+
+    } catch (e) {
+      lastResponse = null;
+      document.getElementById('responseRaw').textContent = 'Error: ' + e.message + '\n\nMake sure the SynthFHIR server is running at:\n' + document.getElementById('baseUrl').value;
+      document.getElementById('responsePretty').textContent = '';
+      document.getElementById('statusBadge').className = 'status-badge status-err';
+      document.getElementById('statusBadge').textContent = 'Network Error';
+    }
+
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+
+  function applySyntaxColors(id) {
+    // minimal JSON syntax highlighting via innerHTML replacement
+    const el = document.getElementById(id);
+    const text = el.textContent;
+    el.innerHTML = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+        let cls = 'color:#fc8181'; // number
+        if (/^"/.test(match)) {
+          cls = /:$/.test(match) ? 'color:#63b3ed' : 'color:#9ae6b4'; // key vs string
+        } else if (/true|false/.test(match)) cls = 'color:#f6ad55';
+        else if (/null/.test(match)) cls = 'color:#718096';
+        return `<span style="${cls}">${match}</span>`;
+      });
+  }
+
+  function clearResponse() {
+    lastResponse = null;
+    document.getElementById('responseRaw').textContent = 'Hit "Send Request" to see the response.';
+    document.getElementById('responsePretty').textContent = '';
+    document.getElementById('statusBadge').className = 'status-badge status-neutral';
+    document.getElementById('statusBadge').textContent = '—';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('copyBtn').style.display = 'none';
+    document.getElementById('urlBar').textContent = buildUrl();
+  }
+
+  function copyResponse() {
+    if (lastResponse) navigator.clipboard.writeText(lastResponse);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['body','pretty'][i] === name));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'pretty') {
+      applySyntaxColors('responsePretty');
+    }
+  }
+
+  // Init
+  renderParams();
+  updateUrlBar();
+  // Pre-fetch conditions for the picker
+  fetchConditions();
+</script>
+</body>
+</html>

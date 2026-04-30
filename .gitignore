@@ -1,1 +1,4 @@
 fhirdocs
+__pycache__/
+*.pyc
+*.pyo
