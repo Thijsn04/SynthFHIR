@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep \"\\\\.profile\\\\.json$\")",
+      "Bash(grep \"\\\\.json$\")"
+    ]
+  }
+}
