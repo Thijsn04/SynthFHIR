@@ -1,20 +1,31 @@
 """Wraps a flat list of R5 FHIR resources into a Bundle resource."""
-import uuid
-
+from generators._rng import new_uuid
 from mappers._helpers import utcnow
 
 
 def build_bundle(resources: list[dict], bundle_type: str = "collection") -> dict:
-    entries = [
-        {
+    """Builds a FHIR R5 Bundle around a list of resources.
+
+    For 'transaction' bundles each entry includes a request element so the
+    bundle can be POSTed directly to a FHIR server for atomic ingestion.
+    """
+    is_transaction = bundle_type == "transaction"
+    entries = []
+    for r in resources:
+        entry: dict = {
             "fullUrl": f"urn:uuid:{r['id']}",
             "resource": r,
         }
-        for r in resources
-    ]
+        if is_transaction:
+            entry["request"] = {
+                "method": "POST",
+                "url": r["resourceType"],
+            }
+        entries.append(entry)
+
     return {
         "resourceType": "Bundle",
-        "id": str(uuid.uuid4()),
+        "id": new_uuid(),
         "meta": {"lastUpdated": utcnow()},
         "type": bundle_type,
         "timestamp": utcnow(),

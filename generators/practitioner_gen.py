@@ -7,11 +7,8 @@ specialty_display, qualification_code, qualification_display, phone, email,
 organization_id.
 """
 import random
-import uuid
 
-from faker import Faker
-
-fake = Faker("en_US")
+from generators._rng import e164_phone, fake, new_uuid
 
 # SNOMED CT specialty codes
 _SPECIALTIES = [
@@ -27,6 +24,10 @@ _SPECIALTIES = [
     ("394592004", "Clinical oncology"),
     ("394602003", "Rehabilitation"),
     ("394609007", "General surgery"),
+    ("394807007", "Psychiatry"),
+    ("418112009", "Pulmonary medicine"),
+    ("394589003", "Nephrology"),
+    ("394805004", "Clinical pharmacology"),
 ]
 
 # HL7 v2-0360 qualification codes
@@ -45,7 +46,7 @@ def generate_practitioner(organization_id: str) -> dict:
     qual_code, qual_display = random.choice(_QUALIFICATIONS)
 
     return {
-        "id": str(uuid.uuid4()),
+        "id": new_uuid(),
         "npi": fake.numerify("##########"),
         "prefix": "Dr.",
         "first_name": first_name,
@@ -55,7 +56,7 @@ def generate_practitioner(organization_id: str) -> dict:
         "specialty_display": specialty_display,
         "qualification_code": qual_code,
         "qualification_display": qual_display,
-        "phone": fake.phone_number(),
+        "phone": e164_phone(),
         "email": fake.email(),
         "organization_id": organization_id,
     }

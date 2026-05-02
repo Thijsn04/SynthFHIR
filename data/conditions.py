@@ -3,6 +3,8 @@
 Each ConditionDef maps a query-friendly key to FHIR-conformant codes and lists
 the observation types that are clinically ordered for that condition. The
 `linked_obs_types` keys reference entries in data/observations.py.
+`typical_age_min` is enforced during condition assignment to prevent clinically
+implausible diagnoses (e.g. atrial fibrillation in a 5-year-old).
 """
 from dataclasses import dataclass
 
@@ -39,7 +41,7 @@ CONDITIONS: list[ConditionDef] = [
         display="Asthma",
         snomed_code="195967001",
         icd10_code="J45.909",
-        linked_obs_types=("fev1", "oxygen_saturation"),
+        linked_obs_types=("fev1", "oxygen_saturation", "respiratory_rate"),
         typical_age_min=5,
     ),
     ConditionDef(
@@ -63,7 +65,7 @@ CONDITIONS: list[ConditionDef] = [
         display="Major Depressive Disorder",
         snomed_code="35489007",
         icd10_code="F32.9",
-        linked_obs_types=(),
+        linked_obs_types=("phq9", "gad7"),
         typical_age_min=15,
     ),
     ConditionDef(
@@ -79,7 +81,7 @@ CONDITIONS: list[ConditionDef] = [
         display="Chronic Obstructive Pulmonary Disease",
         snomed_code="13645005",
         icd10_code="J44.1",
-        linked_obs_types=("fev1", "oxygen_saturation"),
+        linked_obs_types=("fev1", "oxygen_saturation", "respiratory_rate", "body_temperature"),
         typical_age_min=40,
     ),
     ConditionDef(
@@ -113,3 +115,8 @@ def find_condition(query: str) -> ConditionDef | None:
         if q in cond.key or q in cond.display.lower():
             return cond
     return None
+
+
+def conditions_for_age(patient_age: int) -> list[ConditionDef]:
+    """Return conditions whose typical_age_min is <= patient_age."""
+    return [c for c in CONDITIONS if c.typical_age_min <= patient_age]

@@ -13,14 +13,14 @@ class ObservationDef:
     key: str
     loinc_code: str
     display: str
-    category_code: str       # "vital-signs" | "laboratory"
+    category_code: str        # "vital-signs" | "laboratory" | "survey"
     category_display: str
-    unit: str                # human-readable unit label
-    ucum_code: str           # UCUM code for valueQuantity.code
+    unit: str                 # human-readable unit label
+    ucum_code: str            # UCUM code for valueQuantity.code
     normal_range: tuple[float, float]
     abnormal_range: tuple[float, float]
-    low_threshold: float | None   # value < threshold → "L"
-    high_threshold: float | None  # value > threshold → "H"
+    low_threshold: float | None    # value < threshold → "L"
+    high_threshold: float | None   # value > threshold → "H"
     decimal_places: int = 1
 
 
@@ -98,6 +98,20 @@ OBSERVATIONS: dict[str, ObservationDef] = {
             decimal_places=0,
         ),
         ObservationDef(
+            key="respiratory_rate",
+            loinc_code="9279-1",
+            display="Respiratory rate",
+            category_code="vital-signs",
+            category_display="Vital Signs",
+            unit="/min",
+            ucum_code="/min",
+            normal_range=(12.0, 20.0),
+            abnormal_range=(20.0, 35.0),
+            low_threshold=12.0,
+            high_threshold=20.0,
+            decimal_places=0,
+        ),
+        ObservationDef(
             key="body_weight",
             loinc_code="29463-7",
             display="Body weight",
@@ -107,6 +121,20 @@ OBSERVATIONS: dict[str, ObservationDef] = {
             ucum_code="kg",
             normal_range=(50.0, 90.0),
             abnormal_range=(90.0, 180.0),
+            low_threshold=None,
+            high_threshold=None,
+            decimal_places=1,
+        ),
+        ObservationDef(
+            key="height",
+            loinc_code="8302-2",
+            display="Body height",
+            category_code="vital-signs",
+            category_display="Vital Signs",
+            unit="cm",
+            ucum_code="cm",
+            normal_range=(150.0, 195.0),
+            abnormal_range=(150.0, 195.0),  # always use normal range; height is stable
             low_threshold=None,
             high_threshold=None,
             decimal_places=1,
@@ -236,6 +264,34 @@ OBSERVATIONS: dict[str, ObservationDef] = {
             low_threshold=36.1,
             high_threshold=37.2,
             decimal_places=1,
+        ),
+        ObservationDef(
+            key="phq9",
+            loinc_code="44261-6",
+            display="Patient Health Questionnaire 9 item (PHQ-9) total score",
+            category_code="survey",
+            category_display="Survey",
+            unit="{score}",
+            ucum_code="{score}",
+            normal_range=(0.0, 4.0),
+            abnormal_range=(10.0, 27.0),
+            low_threshold=None,
+            high_threshold=4.0,
+            decimal_places=0,
+        ),
+        ObservationDef(
+            key="gad7",
+            loinc_code="70274-6",
+            display="Generalized anxiety disorder 7 item (GAD-7) total score",
+            category_code="survey",
+            category_display="Survey",
+            unit="{score}",
+            ucum_code="{score}",
+            normal_range=(0.0, 4.0),
+            abnormal_range=(10.0, 21.0),
+            low_threshold=None,
+            high_threshold=4.0,
+            decimal_places=0,
         ),
     ]
 }

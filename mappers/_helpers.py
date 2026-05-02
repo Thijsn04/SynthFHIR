@@ -7,8 +7,13 @@ def utcnow() -> str:
 
 
 def ref(resource_type: str, resource_id: str) -> dict:
-    """Builds a FHIR Reference from a resource type and bare ID."""
-    return {"reference": f"{resource_type}/{resource_id}"}
+    """Builds a FHIR Reference using urn:uuid form to match Bundle fullUrls."""
+    return {"reference": f"urn:uuid:{resource_id}"}
+
+
+def bundle_ref(resource_id: str) -> dict:
+    """Alias of ref() for clarity at call sites that know they're inside a Bundle."""
+    return {"reference": f"urn:uuid:{resource_id}"}
 
 
 def build_meta(profile_url: str) -> dict:
@@ -24,7 +29,6 @@ def build_patient_name(patient: dict) -> dict:
     entry: dict = {
         "use": "official",
         "family": patient["last_name"],
-        # 'given' is ordered: [firstName, middleName]
         "given": [patient["first_name"], patient["middle_name"]],
     }
     if patient.get("prefix"):
@@ -38,7 +42,6 @@ def build_patient_telecom(patient: dict) -> list[dict]:
     return [
         {"system": "phone", "value": patient["phone_home"],   "use": "home"},
         {"system": "phone", "value": patient["phone_mobile"],  "use": "mobile"},
-        # Email has no 'use' code in the FHIR ContactPoint value set
         {"system": "email", "value": patient["email"]},
     ]
 
@@ -76,7 +79,6 @@ def build_communication(patient: dict) -> dict:
         "language": {
             "coding": [
                 {
-                    # BCP-47 tags: "en", "es", "fr", etc.
                     "system": "urn:ietf:bcp:47",
                     "code": patient["language_code"],
                     "display": patient["language_display"],
@@ -103,4 +105,58 @@ def build_mrn_identifier(patient: dict) -> dict:
         },
         "system": "urn:synthfhir:mrn",
         "value": patient["mrn"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# US Core extension builders
+# ---------------------------------------------------------------------------
+
+def build_us_core_race(patient: dict) -> dict:
+    """US Core Race extension (OMB race categories)."""
+    return {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+        "extension": [
+            {
+                "url": "ombCategory",
+                "valueCoding": {
+                    "system": "urn:oid:2.16.840.1.113883.6.238",
+                    "code": patient["race_code"],
+                    "display": patient["race_display"],
+                },
+            },
+            {
+                "url": "text",
+                "valueString": patient["race_display"],
+            },
+        ],
+    }
+
+
+def build_us_core_ethnicity(patient: dict) -> dict:
+    """US Core Ethnicity extension (OMB ethnicity categories)."""
+    return {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+        "extension": [
+            {
+                "url": "ombCategory",
+                "valueCoding": {
+                    "system": "urn:oid:2.16.840.1.113883.6.238",
+                    "code": patient["ethnicity_code"],
+                    "display": patient["ethnicity_display"],
+                },
+            },
+            {
+                "url": "text",
+                "valueString": patient["ethnicity_display"],
+            },
+        ],
+    }
+
+
+def build_us_core_birth_sex(patient: dict) -> dict:
+    """US Core Birth Sex extension."""
+    return {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+        "valueCode": patient.get("birth_sex", "UNK"),
     }

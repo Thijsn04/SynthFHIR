@@ -9,12 +9,9 @@ last_name, gender, birth_date, phone, email, address_line, city, state,
 postal_code, country.
 """
 import random
-import uuid
 from datetime import date
 
-from faker import Faker
-
-fake = Faker("en_US")
+from generators._rng import e164_phone, fake, new_uuid
 
 # HL7 v3 RoleCode values used for family relationships
 _PARENT_RELS = [
@@ -37,7 +34,7 @@ def generate_related_persons(patient: dict) -> list[dict]:
         for rel_code, rel_display, rel_gender in _PARENT_RELS:
             related.append(
                 _make(patient, rel_code, rel_display, rel_gender,
-                      age_min=age + 18, age_max=min(age + 50, 100))
+                      age_min=age + 18, age_max=min(age + 50, 80))
             )
 
     # Married adults have a high chance of a linked spouse
@@ -75,7 +72,7 @@ def _make(
     last_name = patient["last_name"] if random.random() < 0.6 else fake.last_name()
 
     return {
-        "id": str(uuid.uuid4()),
+        "id": new_uuid(),
         "patient_id": patient["id"],
         "relationship_code": rel_code,
         "relationship_display": rel_display,
@@ -85,7 +82,7 @@ def _make(
         "birth_date": fake.date_of_birth(
             minimum_age=age_min, maximum_age=age_max
         ).strftime("%Y-%m-%d"),
-        "phone": fake.phone_number(),
+        "phone": e164_phone(),
         "email": fake.email(),
         # Share the patient's address by default (same household)
         "address_line": patient.get("address_line", fake.street_address()),

@@ -1,17 +1,22 @@
-import random
+import asyncio
+import json
 from typing import Annotated, Literal
 
-from faker import Faker
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 
-from data.conditions import CONDITIONS
+from data.conditions import CONDITIONS, VALID_CONDITION_KEYS, find_condition
 from data.observations import OBSERVATIONS
+from generators._rng import seed_all
 from generators.cohort_gen import generate_cohort
 from generators.patient_gen import generate_patients
 from mappers.r4 import allergy as r4_allergy
 from mappers.r4 import bundle as r4_bundle
 from mappers.r4 import condition as r4_condition
+from mappers.r4 import diagnostic_report as r4_diagnostic_report
 from mappers.r4 import encounter as r4_encounter
+from mappers.r4 import immunization as r4_immunization
+from mappers.r4 import medication as r4_medication
 from mappers.r4 import observation as r4_observation
 from mappers.r4 import organization as r4_organization
 from mappers.r4 import patient as r4_patient
@@ -20,7 +25,10 @@ from mappers.r4 import related_person as r4_related_person
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import bundle as r5_bundle
 from mappers.r5 import condition as r5_condition
+from mappers.r5 import diagnostic_report as r5_diagnostic_report
 from mappers.r5 import encounter as r5_encounter
+from mappers.r5 import immunization as r5_immunization
+from mappers.r5 import medication as r5_medication
 from mappers.r5 import observation as r5_observation
 from mappers.r5 import organization as r5_organization
 from mappers.r5 import patient as r5_patient
@@ -30,32 +38,83 @@ from mappers.r5 import related_person as r5_related_person
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Mapper dispatch tables — index by FHIR version string
+# Mapper dispatch tables — indexed by FHIR version string
 # ---------------------------------------------------------------------------
-_PATIENT_MAPPER    = {"R4": r4_patient.map_patient,           "R5": r5_patient.map_patient}
-_PRAC_MAPPER       = {"R4": r4_practitioner.map_practitioner,  "R5": r5_practitioner.map_practitioner}
-_ORG_MAPPER        = {"R4": r4_organization.map_organization,  "R5": r5_organization.map_organization}
-_RP_MAPPER         = {"R4": r4_related_person.map_related_person, "R5": r5_related_person.map_related_person}
-_COND_MAPPER       = {"R4": r4_condition.map_condition,        "R5": r5_condition.map_condition}
-_ALLERGY_MAPPER    = {"R4": r4_allergy.map_allergy,            "R5": r5_allergy.map_allergy}
-_ENC_MAPPER        = {"R4": r4_encounter.map_encounter,        "R5": r5_encounter.map_encounter}
-_OBS_MAPPER        = {"R4": r4_observation.map_observation,    "R5": r5_observation.map_observation}
-_BUNDLE_BUILDER    = {"R4": r4_bundle.build_bundle,            "R5": r5_bundle.build_bundle}
+_PATIENT_MAPPER  = {"R4": r4_patient.map_patient,           "R5": r5_patient.map_patient}
+_PRAC_MAPPER     = {"R4": r4_practitioner.map_practitioner,  "R5": r5_practitioner.map_practitioner}
+_ORG_MAPPER      = {"R4": r4_organization.map_organization,  "R5": r5_organization.map_organization}
+_RP_MAPPER       = {"R4": r4_related_person.map_related_person, "R5": r5_related_person.map_related_person}
+_COND_MAPPER     = {"R4": r4_condition.map_condition,        "R5": r5_condition.map_condition}
+_ALLERGY_MAPPER  = {"R4": r4_allergy.map_allergy,            "R5": r5_allergy.map_allergy}
+_ENC_MAPPER      = {"R4": r4_encounter.map_encounter,        "R5": r5_encounter.map_encounter}
+_OBS_MAPPER      = {"R4": r4_observation.map_observation,    "R5": r5_observation.map_observation}
+_MED_MAPPER      = {"R4": r4_medication.map_medication,      "R5": r5_medication.map_medication}
+_IMM_MAPPER      = {"R4": r4_immunization.map_immunization,  "R5": r5_immunization.map_immunization}
+_DR_MAPPER       = {"R4": r4_diagnostic_report.map_diagnostic_report, "R5": r5_diagnostic_report.map_diagnostic_report}
+_BUNDLE_BUILDER  = {"R4": r4_bundle.build_bundle,            "R5": r5_bundle.build_bundle}
 
 
-def _map_and_bundle(raw: dict, version: str) -> dict:
+def _map_and_bundle(raw: dict, version: str, bundle_type: str, us_core: bool) -> dict:
     """Maps every raw resource in the cohort dict and wraps the result in a Bundle."""
     v = version
     resources: list[dict] = []
-    resources += [_ORG_MAPPER[v](o)   for o in raw["organizations"]]
-    resources += [_PRAC_MAPPER[v](p)  for p in raw["practitioners"]]
-    resources += [_PATIENT_MAPPER[v](p) for p in raw["patients"]]
-    resources += [_COND_MAPPER[v](c)  for c in raw["conditions"]]
-    resources += [_ALLERGY_MAPPER[v](a) for a in raw["allergies"]]
-    resources += [_RP_MAPPER[v](r)    for r in raw["related_persons"]]
-    resources += [_ENC_MAPPER[v](e)   for e in raw["encounters"]]
-    resources += [_OBS_MAPPER[v](o)   for o in raw["observations"]]
-    return _BUNDLE_BUILDER[v](resources)
+
+    # Pass us_core flag only to patient mappers (the only ones that differ structurally)
+    resources += [_ORG_MAPPER[v](o)           for o in raw["organizations"]]
+    resources += [_PRAC_MAPPER[v](p)          for p in raw["practitioners"]]
+    resources += [_PATIENT_MAPPER[v](p, us_core=us_core) for p in raw["patients"]]
+    resources += [_COND_MAPPER[v](c)          for c in raw["conditions"]]
+    resources += [_ALLERGY_MAPPER[v](a)       for a in raw["allergies"]]
+    resources += [_IMM_MAPPER[v](i)           for i in raw.get("immunizations", [])]
+    resources += [_RP_MAPPER[v](r)            for r in raw["related_persons"]]
+    resources += [_ENC_MAPPER[v](e)           for e in raw["encounters"]]
+    resources += [_OBS_MAPPER[v](o)           for o in raw["observations"]]
+    resources += [_DR_MAPPER[v](d)            for d in raw.get("diagnostic_reports", [])]
+    resources += [_MED_MAPPER[v](m)           for m in raw.get("medications", [])]
+
+    return _BUNDLE_BUILDER[v](resources, bundle_type=bundle_type)
+
+
+def _validate_condition(condition: str | None) -> None:
+    """Raise HTTP 422 if condition filter matches no known condition."""
+    if condition is not None and find_condition(condition) is None:
+        valid = sorted(VALID_CONDITION_KEYS)
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "msg": f"Unknown condition '{condition}'. Valid keys: {valid}",
+                "valid_keys": valid,
+            },
+        )
+
+
+def _validate_age_range(age_min: int, age_max: int) -> None:
+    if age_min >= age_max:
+        raise HTTPException(
+            status_code=422,
+            detail=f"age_min ({age_min}) must be less than age_max ({age_max})",
+        )
+
+
+def _ndjson_stream(raw: dict, version: str, us_core: bool):
+    """Generator that yields one FHIR resource JSON per line (NDJSON)."""
+    v = version
+    mappers = [
+        (_ORG_MAPPER[v],     raw["organizations"],              {}),
+        (_PRAC_MAPPER[v],    raw["practitioners"],              {}),
+        (_PATIENT_MAPPER[v], raw["patients"],                   {"us_core": us_core}),
+        (_COND_MAPPER[v],    raw["conditions"],                 {}),
+        (_ALLERGY_MAPPER[v], raw["allergies"],                  {}),
+        (_IMM_MAPPER[v],     raw.get("immunizations", []),      {}),
+        (_RP_MAPPER[v],      raw["related_persons"],            {}),
+        (_ENC_MAPPER[v],     raw["encounters"],                 {}),
+        (_OBS_MAPPER[v],     raw["observations"],               {}),
+        (_DR_MAPPER[v],      raw.get("diagnostic_reports", []), {}),
+        (_MED_MAPPER[v],     raw.get("medications", []),        {}),
+    ]
+    for mapper_fn, items, kwargs in mappers:
+        for item in items:
+            yield json.dumps(mapper_fn(item, **kwargs), separators=(",", ":")) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -66,33 +125,56 @@ def _map_and_bundle(raw: dict, version: str) -> dict:
     "/generate/cohort",
     tags=["Generate"],
     summary="Generate a fully relational synthetic clinical cohort",
-    response_description="A FHIR Bundle containing patients, practitioners, organizations, "
-                         "conditions, allergies, encounters, observations, and related persons.",
+    response_description=(
+        "A FHIR Bundle (or NDJSON stream) containing patients, practitioners, "
+        "organizations, conditions, allergies, immunizations, encounters, "
+        "observations, diagnostic reports, medications, and related persons."
+    ),
 )
-def generate_cohort_endpoint(
+async def generate_cohort_endpoint(
     count: Annotated[int, Query(ge=1, le=1000, description="Number of patients")] = 10,
     version: Annotated[Literal["R4", "R5"], Query(description="FHIR version")] = "R4",
     age_min: Annotated[int, Query(ge=0, le=119, description="Minimum patient age")] = 0,
     age_max: Annotated[int, Query(ge=1, le=120, description="Maximum patient age")] = 80,
     condition: Annotated[
         str | None,
-        Query(description="Optional condition filter — partial name or key, e.g. 'diabetes', 'hypertension'"),
+        Query(description="Condition filter — partial name or key, e.g. 'diabetes', 'hypertension'"),
     ] = None,
-    seed: Annotated[int | None, Query(description="RNG seed for reproducible output")] = None,
-    num_practitioners: Annotated[int, Query(ge=1, le=50, description="Practitioners to generate")] = 3,
-    num_organizations: Annotated[int, Query(ge=1, le=10, description="Organizations to generate")] = 1,
+    seed: Annotated[int | None, Query(description="RNG seed for fully reproducible output")] = None,
+    num_practitioners: Annotated[int, Query(ge=1, le=50)] = 3,
+    num_organizations: Annotated[int, Query(ge=1, le=10)] = 1,
+    bundle_type: Annotated[
+        Literal["collection", "transaction"],
+        Query(description="FHIR Bundle type. Use 'transaction' for direct server ingestion."),
+    ] = "collection",
+    format: Annotated[
+        Literal["bundle", "ndjson"],
+        Query(description="Response format. 'ndjson' streams one resource per line."),
+    ] = "bundle",
+    profile: Annotated[
+        Literal["base", "us-core"],
+        Query(description="Profile set. 'us-core' adds race, ethnicity, and birth-sex extensions."),
+    ] = "base",
 ):
     """
     Generate a complete, interconnected synthetic clinical dataset.
 
     Every patient is linked to practitioners, an organization, conditions,
-    allergies, family members (RelatedPerson), clinic visits (Encounter),
-    and condition-appropriate lab/vital results (Observation).
+    allergies, immunizations, family members (RelatedPerson), clinic visits
+    (Encounter), condition-appropriate lab/vital results (Observation) grouped
+    under DiagnosticReport resources, and MedicationRequests for active
+    conditions.
 
-    Use **seed** to get reproducible datasets across runs — useful for CI
-    pipelines and regression testing.
+    Use **seed** to get fully reproducible datasets across runs — useful for
+    CI pipelines and regression testing.
     """
-    raw = generate_cohort(
+    _validate_age_range(age_min, age_max)
+    _validate_condition(condition)
+
+    us_core = profile == "us-core"
+
+    raw = await asyncio.to_thread(
+        generate_cohort,
         count=count,
         age_min=age_min,
         age_max=age_max,
@@ -101,7 +183,15 @@ def generate_cohort_endpoint(
         num_practitioners=num_practitioners,
         num_organizations=num_organizations,
     )
-    return _map_and_bundle(raw, version)
+
+    if format == "ndjson":
+        return StreamingResponse(
+            _ndjson_stream(raw, version, us_core),
+            media_type="application/fhir+ndjson",
+            headers={"Content-Disposition": "attachment; filename=cohort.ndjson"},
+        )
+
+    return _map_and_bundle(raw, version, bundle_type, us_core)
 
 
 @router.get(
@@ -110,24 +200,75 @@ def generate_cohort_endpoint(
     summary="Generate one or more standalone Patient resources",
     response_description="A FHIR Bundle containing only Patient resources.",
 )
-def generate_patient_endpoint(
-    count: Annotated[int, Query(ge=1, le=100, description="Number of patients (1–100)")] = 1,
+async def generate_patient_endpoint(
+    count: Annotated[int, Query(ge=1, le=100, description="Number of patients (1-100)")] = 1,
     version: Annotated[Literal["R4", "R5"], Query(description="FHIR version")] = "R4",
     age_min: Annotated[int, Query(ge=0, le=119)] = 0,
     age_max: Annotated[int, Query(ge=1, le=120)] = 100,
     seed: Annotated[int | None, Query(description="RNG seed for reproducible output")] = None,
+    bundle_type: Annotated[Literal["collection", "transaction"], Query()] = "collection",
+    profile: Annotated[Literal["base", "us-core"], Query()] = "base",
 ):
-    """
-    Generate lightweight Patient resources with no linked clinical data.
+    """Generate lightweight Patient resources with no linked clinical data.
     For a full relational dataset use **/generate/cohort** instead.
     """
-    if seed is not None:
-        random.seed(seed)
-        Faker.seed(seed)
+    _validate_age_range(age_min, age_max)
 
-    raw_patients = generate_patients(count, age_min=age_min, age_max=age_max)
-    mapped = [_PATIENT_MAPPER[version](p) for p in raw_patients]
-    return _BUNDLE_BUILDER[version](mapped)
+    if seed is not None:
+        seed_all(seed)
+
+    us_core = profile == "us-core"
+    raw_patients = await asyncio.to_thread(generate_patients, count, age_min, age_max)
+    mapped = [_PATIENT_MAPPER[version](p, us_core=us_core) for p in raw_patients]
+    return _BUNDLE_BUILDER[version](mapped, bundle_type=bundle_type)
+
+
+@router.get(
+    "/generate/practitioner",
+    tags=["Generate"],
+    summary="Generate one or more standalone Practitioner resources",
+)
+async def generate_practitioner_endpoint(
+    count: Annotated[int, Query(ge=1, le=100, description="Number of practitioners (1-100)")] = 1,
+    version: Annotated[Literal["R4", "R5"], Query(description="FHIR version")] = "R4",
+    seed: Annotated[int | None, Query(description="RNG seed for reproducible output")] = None,
+    bundle_type: Annotated[Literal["collection", "transaction"], Query()] = "collection",
+):
+    """Generate Practitioner resources not linked to any organization or patient."""
+    from generators._rng import new_uuid
+    from generators.practitioner_gen import generate_practitioner
+
+    if seed is not None:
+        seed_all(seed)
+
+    dummy_org_id = new_uuid()
+    raw = await asyncio.to_thread(
+        lambda: [generate_practitioner(dummy_org_id) for _ in range(count)]
+    )
+    mapped = [_PRAC_MAPPER[version](p) for p in raw]
+    return _BUNDLE_BUILDER[version](mapped, bundle_type=bundle_type)
+
+
+@router.get(
+    "/generate/organization",
+    tags=["Generate"],
+    summary="Generate one or more standalone Organization resources",
+)
+async def generate_organization_endpoint(
+    count: Annotated[int, Query(ge=1, le=50, description="Number of organizations (1-50)")] = 1,
+    version: Annotated[Literal["R4", "R5"], Query(description="FHIR version")] = "R4",
+    seed: Annotated[int | None, Query(description="RNG seed for reproducible output")] = None,
+    bundle_type: Annotated[Literal["collection", "transaction"], Query()] = "collection",
+):
+    """Generate Organization resources representing healthcare facilities."""
+    from generators.organization_gen import generate_organization
+
+    if seed is not None:
+        seed_all(seed)
+
+    raw = await asyncio.to_thread(lambda: [generate_organization() for _ in range(count)])
+    mapped = [_ORG_MAPPER[version](o) for o in raw]
+    return _BUNDLE_BUILDER[version](mapped, bundle_type=bundle_type)
 
 
 @router.get(
@@ -143,6 +284,7 @@ def list_conditions():
             "display": c.display,
             "snomed_code": c.snomed_code,
             "icd10_code": c.icd10_code,
+            "typical_age_min": c.typical_age_min,
             "linked_observations": list(c.linked_obs_types),
         }
         for c in CONDITIONS
@@ -163,6 +305,8 @@ def list_observations():
             "display": obs.display,
             "category": obs.category_code,
             "unit": obs.unit,
+            "normal_range": {"low": obs.normal_range[0], "high": obs.normal_range[1]},
+            "abnormal_range": {"low": obs.abnormal_range[0], "high": obs.abnormal_range[1]},
         }
         for obs in OBSERVATIONS.values()
     ]

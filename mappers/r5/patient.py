@@ -3,8 +3,7 @@
 R5 differences from R4:
   1. Canonical profile URL uses the R5 version path segment.
   2. A human-readable 'text' narrative is strongly recommended.
-  3. The individual-genderIdentity extension is formally standardised in R5;
-     SNOMED CT codes for male/female, HL7 NullFlavor for other/unknown.
+  3. The individual-genderIdentity extension is formally standardised in R5.
 """
 from mappers._helpers import (
     build_address,
@@ -14,29 +13,38 @@ from mappers._helpers import (
     build_mrn_identifier,
     build_patient_name,
     build_patient_telecom,
+    build_us_core_birth_sex,
+    build_us_core_ethnicity,
+    build_us_core_race,
 )
 
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Patient"
+_US_CORE_PROFILE = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
 
-# Maps administrative-gender to the R5 genderIdentity value set.
-# SNOMED CT: 446151000124109 = male, 446141000124107 = female
-# HL7 NullFlavor: OTH = other, UNK = unknown
 _GENDER_IDENTITY: dict[str, tuple[str, str, str]] = {
-    "male":    ("http://snomed.info/sct",                                 "446151000124109", "Identifies as male gender"),
-    "female":  ("http://snomed.info/sct",                                 "446141000124107", "Identifies as female gender"),
-    "other":   ("http://terminology.hl7.org/CodeSystem/v3-NullFlavor",    "OTH",             "Other"),
-    "unknown": ("http://terminology.hl7.org/CodeSystem/v3-NullFlavor",    "UNK",             "Unknown"),
+    "male":    ("http://snomed.info/sct",                              "446151000124109", "Identifies as male gender"),
+    "female":  ("http://snomed.info/sct",                              "446141000124107", "Identifies as female gender"),
+    "other":   ("http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "OTH",             "Other"),
+    "unknown": ("http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "UNK",             "Unknown"),
 }
 
 
-def map_patient(patient: dict) -> dict:
+def map_patient(patient: dict, us_core: bool = False) -> dict:
     first, last = patient["first_name"], patient["last_name"]
+    profile = _US_CORE_PROFILE if us_core else _PROFILE
+
+    extensions = [_build_gender_identity_ext(patient["gender"])]
+    if us_core and patient.get("race_code"):
+        extensions += [
+            build_us_core_race(patient),
+            build_us_core_ethnicity(patient),
+            build_us_core_birth_sex(patient),
+        ]
 
     resource: dict = {
         "resourceType": "Patient",
         "id": patient["id"],
-        "meta": build_meta(_PROFILE),
-        # R5 strongly recommends a human-readable XHTML narrative
+        "meta": build_meta(profile),
         "text": {
             "status": "generated",
             "div": (
@@ -46,8 +54,7 @@ def map_patient(patient: dict) -> dict:
                 f"</div>"
             ),
         },
-        # R5 standard genderIdentity extension (complex extension with sub-extension)
-        "extension": [_build_gender_identity_ext(patient["gender"])],
+        "extension": extensions,
         "identifier": [build_mrn_identifier(patient)],
         "active": True,
         "name": [build_patient_name(patient)],
@@ -64,11 +71,6 @@ def map_patient(patient: dict) -> dict:
 
 
 def _build_gender_identity_ext(gender: str) -> dict:
-    """Builds the R5 individual-genderIdentity complex extension.
-
-    The outer url names the extension; the inner 'value' sub-extension holds
-    the CodeableConcept with the actual gender identity code.
-    """
     system, code, display = _GENDER_IDENTITY.get(
         gender,
         ("http://terminology.hl7.org/CodeSystem/v3-NullFlavor", "UNK", "Unknown"),

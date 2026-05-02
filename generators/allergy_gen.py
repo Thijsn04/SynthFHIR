@@ -8,8 +8,9 @@ substance_display, category, criticality, reaction_code, reaction_display,
 reaction_severity, onset_date, recorded_date.
 """
 import random
-import uuid
 from datetime import date, timedelta
+
+from generators._rng import new_uuid
 
 # (snomed_code, display, category, criticality)
 _ALLERGIES = [
@@ -54,7 +55,7 @@ def _make(patient_id: str, practitioner_id: str, allergy: tuple) -> dict:
     onset = date.today() - timedelta(days=random.randint(365, 7300))
 
     return {
-        "id": str(uuid.uuid4()),
+        "id": new_uuid(),
         "patient_id": patient_id,
         "practitioner_id": practitioner_id,
         "type": "allergy",

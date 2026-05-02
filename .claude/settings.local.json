@@ -6,7 +6,15 @@
       "Bash(git rm *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "WebFetch(domain:hl7.org)"
+      "WebFetch(domain:hl7.org)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\thijs\\\\Documents\\\\GitHub\\\\SynthFHIR\" -Recurse -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(grep -E '\\\\.\\(py|json|txt|toml|yaml|md|html|js|css\\)$')",
+      "Bash(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\thijs\\\\Documents\\\\GitHub\\\\SynthFHIR\\\\tests\")",
+      "Bash(Out-Null)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(pip install *)"
     ]
   }
 }

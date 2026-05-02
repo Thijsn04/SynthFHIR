@@ -5,11 +5,8 @@ Output keys: id, name, type_code, type_display, phone, email,
 address_line, city, state, postal_code, country.
 """
 import random
-import uuid
 
-from faker import Faker
-
-fake = Faker("en_US")
+from generators._rng import e164_phone, fake, new_uuid
 
 _ORG_SUFFIXES = ["Clinic", "Medical Center", "Health System", "Hospital", "Family Practice"]
 
@@ -28,11 +25,11 @@ def generate_organization() -> dict:
     city = fake.city()
 
     return {
-        "id": str(uuid.uuid4()),
+        "id": new_uuid(),
         "name": f"{city} {fake.last_name()} {suffix}",
         "type_code": type_code,
         "type_display": type_display,
-        "phone": fake.phone_number(),
+        "phone": e164_phone(),
         "email": fake.company_email(),
         "address_line": fake.street_address(),
         "city": city,
