@@ -1,9 +1,9 @@
 """Shared FHIR building-block helpers used by both the R4 and R5 mappers."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def utcnow() -> str:
-    return datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def ref(resource_type: str, resource_id: str) -> dict:
