@@ -10,7 +10,6 @@ issued, observation_ids.
 
 from generators._rng import new_uuid
 
-
 # LOINC panel code for a general comprehensive metabolic panel
 _PANEL_LOINC = "24323-8"
 _PANEL_DISPLAY = "Comprehensive metabolic panel"

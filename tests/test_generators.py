@@ -14,7 +14,6 @@ from generators.observation_gen import generate_observations_for_encounter
 from generators.organization_gen import generate_organization
 from generators.patient_gen import generate_patient, generate_patients
 
-
 # ---------------------------------------------------------------------------
 # _rng — seeding reproducibility
 # ---------------------------------------------------------------------------
