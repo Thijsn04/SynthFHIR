@@ -13,7 +13,7 @@ class_code, class_display, type_code, type_display, start_datetime,
 end_datetime.
 """
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from generators._rng import new_uuid
 
@@ -60,7 +60,7 @@ def generate_encounter(
         k=1,
     )[0]
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     days_ago = random.randint(max(1, days_ago_min), max(2, days_ago_max))
     start = now - timedelta(days=days_ago, hours=random.randint(8, 17), minutes=random.randint(0, 59))
     end = start + timedelta(minutes=random.randint(15, 60))
