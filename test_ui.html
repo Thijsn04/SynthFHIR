@@ -5,121 +5,285 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SynthFHIR Test UI</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
-    header { padding: 16px 24px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 12px; }
-    header h1 { font-size: 1.25rem; font-weight: 600; color: #63b3ed; }
-    header span { font-size: 0.8rem; color: #718096; background: #1a202c; padding: 2px 8px; border-radius: 999px; border: 1px solid #2d3748; }
-    .layout { display: grid; grid-template-columns: 340px 1fr; height: calc(100vh - 57px); }
-    .sidebar { border-right: 1px solid #2d3748; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-    .panel { background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; overflow: hidden; }
-    .panel-header { padding: 10px 14px; background: #171923; border-bottom: 1px solid #2d3748; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #a0aec0; display: flex; align-items: center; gap: 6px; }
-    .panel-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-    label { font-size: 0.8rem; color: #a0aec0; display: block; margin-bottom: 4px; }
-    input[type=number], select { width: 100%; background: #171923; border: 1px solid #2d3748; border-radius: 6px; color: #e2e8f0; padding: 7px 10px; font-size: 0.85rem; outline: none; }
-    input[type=number]:focus, select:focus { border-color: #63b3ed; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; overflow: hidden; }
+
+    header {
+      padding: 0 20px; height: 48px; border-bottom: 1px solid #21262d;
+      display: flex; align-items: center; gap: 12px; background: #161b22;
+    }
+    .logo { font-size: 1.1rem; font-weight: 700; color: #58a6ff; letter-spacing: -0.02em; }
+    .logo-sub { font-size: 0.72rem; color: #484f58; background: #21262d; padding: 2px 8px; border-radius: 999px; border: 1px solid #30363d; }
+    .header-spacer { flex: 1; }
+    .server-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #484f58; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #484f58; transition: background 0.3s; flex-shrink: 0; }
+    .status-dot.online { background: #3fb950; box-shadow: 0 0 6px #3fb95055; }
+    .status-dot.offline { background: #f85149; box-shadow: 0 0 6px #f8514955; }
+    .status-dot.checking { background: #d29922; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    .layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 48px); overflow: hidden; }
+
+    .sidebar { border-right: 1px solid #21262d; overflow-y: auto; display: flex; flex-direction: column; background: #161b22; }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    .panel { border-bottom: 1px solid #21262d; }
+    .panel-header {
+      padding: 8px 14px; font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; color: #484f58;
+      display: flex; align-items: center; cursor: pointer; user-select: none;
+      background: #0d1117; transition: color 0.15s;
+    }
+    .panel-header:hover { color: #8b949e; }
+    .chevron { margin-left: auto; transition: transform 0.2s; }
+    .panel.collapsed .chevron { transform: rotate(-90deg); }
+    .panel.collapsed .panel-body { display: none; }
+    .panel-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+    .endpoint-btn {
+      padding: 7px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+      border: 1px solid transparent; background: transparent; color: #8b949e;
+      transition: all 0.15s; width: 100%; text-align: left;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .endpoint-btn:hover { background: #21262d; color: #c9d1d9; }
+    .endpoint-btn.active { border-color: #1f6feb; color: #58a6ff; background: #1f6feb18; }
+    .ep-name { font-family: 'Consolas','SF Mono',monospace; font-size: 0.75rem; flex: 1; }
+    .ep-tag { font-size: 0.65rem; color: #484f58; }
+    .endpoint-btn.active .ep-tag { color: #1f6feb88; }
+
+    .badge { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 0.62rem; font-weight: 700; flex-shrink: 0; }
+    .badge-get { background: #1a4731; color: #3fb950; }
+
+    label { font-size: 0.73rem; color: #8b949e; display: block; margin-bottom: 3px; }
+    input[type=text], input[type=number], select {
+      width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #c9d1d9; padding: 6px 10px; font-size: 0.82rem; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit;
+    }
+    input[type=text]:focus, input[type=number]:focus, select:focus {
+      border-color: #1f6feb; box-shadow: 0 0 0 3px #1f6feb18;
+    }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn { width: 100%; padding: 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: #3182ce; color: #fff; }
-    .btn-secondary { background: #2d3748; color: #e2e8f0; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .endpoint-btn { padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #2d3748; background: #171923; color: #a0aec0; transition: all 0.15s; width: 100%; text-align: left; }
-    .endpoint-btn:hover { background: #2d3748; color: #e2e8f0; }
-    .endpoint-btn.active { border-color: #63b3ed; color: #63b3ed; background: #1a3a52; }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-right: 6px; }
-    .badge-get { background: #276749; color: #9ae6b4; }
+
+    .toggle-group { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+    .toggle-opt {
+      flex: 1; padding: 5px 6px; font-size: 0.75rem; cursor: pointer; text-align: center;
+      background: #0d1117; color: #8b949e; border: none; border-right: 1px solid #30363d;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .toggle-opt:last-child { border-right: none; }
+    .toggle-opt:hover { background: #21262d; color: #c9d1d9; }
+    .toggle-opt.active { background: #1f6feb; color: #fff; font-weight: 600; }
+
+    .group-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #30363d; margin-top: 4px; }
+
+    .conditions-list { max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+    .conditions-list::-webkit-scrollbar { width: 4px; }
+    .conditions-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+    .condition-tag {
+      padding: 4px 8px; border-radius: 4px; font-size: 0.73rem; cursor: pointer;
+      border: 1px solid #21262d; background: #0d1117; color: #8b949e; transition: all 0.12s;
+    }
+    .condition-tag:hover { border-color: #1f6feb; color: #58a6ff; }
+    .condition-tag.selected { border-color: #1f6feb; color: #58a6ff; background: #1f6feb18; }
+
+    .actions { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #21262d; }
+    .btn { padding: 8px 14px; border-radius: 6px; font-size: 0.83rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; width: 100%; font-family: inherit; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-primary { background: #238636; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #2ea043; }
+    .btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+    .btn-secondary:hover:not(:disabled) { background: #30363d; }
+    .btn-hint { font-size: 0.67rem; font-weight: 400; opacity: 0.5; }
+
+    .history-item {
+      padding: 7px 10px; border-radius: 6px; border: 1px solid #21262d;
+      background: #0d1117; cursor: pointer; transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: #30363d; }
+    .history-top { display: flex; align-items: center; gap: 6px; }
+    .history-path { font-family: monospace; color: #58a6ff; font-size: 0.7rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-status { font-size: 0.65rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+    .history-status.ok { background: #1a4731; color: #3fb950; }
+    .history-status.err { background: #3d1515; color: #f85149; }
+    .history-meta { font-size: 0.67rem; color: #484f58; display: flex; gap: 8px; margin-top: 2px; }
+    .hint { font-size: 0.72rem; color: #484f58; }
+
     .main { display: flex; flex-direction: column; overflow: hidden; }
-    .toolbar { padding: 12px 16px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 10px; background: #171923; }
-    .url-bar { flex: 1; background: #0f1117; border: 1px solid #2d3748; border-radius: 6px; padding: 7px 12px; font-size: 0.8rem; color: #718096; font-family: monospace; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
-    .status-ok { background: #276749; color: #9ae6b4; }
-    .status-err { background: #742a2a; color: #fc8181; }
-    .status-neutral { background: #2d3748; color: #a0aec0; }
-    .response-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-    .tabs { display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid #2d3748; background: #171923; }
-    .tab { padding: 6px 14px; font-size: 0.8rem; cursor: pointer; border-radius: 6px 6px 0 0; color: #718096; border: 1px solid transparent; border-bottom: none; }
-    .tab.active { color: #e2e8f0; background: #0f1117; border-color: #2d3748; }
-    .tab-content { flex: 1; overflow: auto; padding: 0; display: none; }
-    .tab-content.active { display: block; }
-    pre { padding: 16px; font-size: 0.78rem; line-height: 1.6; font-family: 'Consolas', 'Fira Code', monospace; white-space: pre-wrap; word-break: break-word; }
-    .spinner { display: none; width: 16px; height: 16px; border: 2px solid #2d3748; border-top-color: #63b3ed; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .toolbar {
+      padding: 10px 16px; border-bottom: 1px solid #21262d;
+      display: flex; align-items: center; gap: 8px; background: #161b22; flex-shrink: 0;
+    }
+    .url-bar {
+      flex: 1; background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+      padding: 6px 10px; font-size: 0.73rem; color: #8b949e;
+      font-family: 'Consolas','SF Mono',monospace; overflow: hidden;
+      white-space: nowrap; text-overflow: ellipsis;
+    }
+    .icon-btn {
+      padding: 5px 10px; background: #21262d; border: 1px solid #30363d; border-radius: 5px;
+      color: #8b949e; font-size: 0.73rem; cursor: pointer; transition: all 0.15s;
+      white-space: nowrap; font-family: inherit;
+    }
+    .icon-btn:hover { color: #c9d1d9; background: #30363d; }
+    .spinner { display: none; width: 14px; height: 14px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .stats { display: flex; gap: 16px; padding: 10px 16px; border-bottom: 1px solid #2d3748; font-size: 0.78rem; color: #718096; }
+    .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.73rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .s-ok { background: #1a4731; color: #3fb950; }
+    .s-err { background: #3d1515; color: #f85149; }
+    .s-neutral { background: #21262d; color: #8b949e; }
+
+    .stats { display: flex; gap: 20px; padding: 7px 16px; border-bottom: 1px solid #21262d; font-size: 0.73rem; color: #484f58; flex-shrink: 0; }
     .stats span { display: flex; align-items: center; gap: 4px; }
-    .stats b { color: #a0aec0; }
-    .conditions-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-    .condition-tag { padding: 5px 8px; border-radius: 5px; font-size: 0.78rem; cursor: pointer; border: 1px solid #2d3748; background: #171923; color: #a0aec0; transition: all 0.12s; }
-    .condition-tag:hover { border-color: #63b3ed; color: #63b3ed; }
-    .condition-tag.selected { border-color: #63b3ed; color: #63b3ed; background: #1a3a52; }
-    .divider { border: none; border-top: 1px solid #2d3748; }
-    .hint { font-size: 0.72rem; color: #4a5568; }
-    .copy-btn { margin-left: auto; padding: 4px 10px; font-size: 0.72rem; background: #2d3748; border: 1px solid #4a5568; color: #a0aec0; border-radius: 5px; cursor: pointer; }
-    .copy-btn:hover { color: #e2e8f0; }
+    .stats b { color: #8b949e; }
+
+    .tabs { display: flex; padding: 0 16px; border-bottom: 1px solid #21262d; background: #161b22; flex-shrink: 0; align-items: center; }
+    .tab { padding: 9px 14px; font-size: 0.77rem; cursor: pointer; color: #484f58; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .tab:hover { color: #8b949e; }
+    .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+    .tab-spacer { flex: 1; }
+    .tab-actions { display: flex; align-items: center; gap: 6px; }
+
+    .response-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .tab-content { flex: 1; overflow: auto; display: none; flex-direction: column; }
+    .tab-content.active { display: flex; }
+    .tab-content::-webkit-scrollbar { width: 7px; }
+    .tab-content::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #484f58; }
+    .empty-icon { font-size: 2rem; }
+    .empty-title { font-size: 0.88rem; color: #8b949e; font-weight: 500; }
+    .empty-sub { font-size: 0.75rem; }
+
+    pre {
+      padding: 16px; font-size: 0.77rem; line-height: 1.65;
+      font-family: 'Consolas','SF Mono','Fira Code',monospace;
+      white-space: pre-wrap; word-break: break-word; flex: 1;
+    }
+
+    .error-box { padding: 20px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .error-title { color: #f85149; font-weight: 600; }
+    .error-msg { font-family: monospace; font-size: 0.8rem; color: #8b949e; }
+    .error-hint { font-size: 0.77rem; color: #484f58; }
+
+    .ndjson-view { padding: 12px; display: flex; flex-direction: column; gap: 5px; }
+    .ndjson-item { border: 1px solid #21262d; border-radius: 6px; overflow: hidden; }
+    .ndjson-header {
+      padding: 6px 10px; background: #161b22; font-size: 0.72rem; color: #8b949e;
+      display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .ndjson-header:hover { background: #21262d; }
+    .ndjson-type { color: #58a6ff; font-weight: 600; font-family: monospace; }
+    .ndjson-id { color: #484f58; font-family: monospace; font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .ndjson-toggle { margin-left: auto; color: #484f58; font-size: 0.7rem; }
+    .ndjson-body { display: none; border-top: 1px solid #21262d; }
+    .ndjson-body.open { display: block; }
+    .ndjson-body pre { padding: 10px 14px; font-size: 0.74rem; background: #0d1117; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>SynthFHIR</h1>
-  <span>Test UI</span>
+  <div class="logo">SynthFHIR</div>
+  <div class="logo-sub">Test UI</div>
+  <div class="header-spacer"></div>
+  <div class="server-status">
+    <div class="status-dot checking" id="serverDot"></div>
+    <span id="serverLabel">checking…</span>
+  </div>
 </header>
 
 <div class="layout">
-  <!-- Sidebar -->
   <div class="sidebar">
 
-    <!-- Endpoint selector -->
-    <div class="panel">
-      <div class="panel-header">Endpoint</div>
+    <div class="panel" id="panelEndpoints">
+      <div class="panel-header" onclick="togglePanel('panelEndpoints')">
+        Endpoints <span class="chevron">▾</span>
+      </div>
       <div class="panel-body">
         <button class="endpoint-btn active" onclick="selectEndpoint('cohort')">
-          <span class="badge badge-get">GET</span>/api/generate/cohort
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/generate/cohort</span>
+          <span class="ep-tag">full dataset</span>
         </button>
         <button class="endpoint-btn" onclick="selectEndpoint('patient')">
-          <span class="badge badge-get">GET</span>/api/generate/patient
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/generate/patient</span>
+          <span class="ep-tag">standalone</span>
+        </button>
+        <button class="endpoint-btn" onclick="selectEndpoint('practitioner')">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/generate/practitioner</span>
+          <span class="ep-tag">standalone</span>
+        </button>
+        <button class="endpoint-btn" onclick="selectEndpoint('organization')">
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/generate/organization</span>
+          <span class="ep-tag">standalone</span>
         </button>
         <button class="endpoint-btn" onclick="selectEndpoint('conditions')">
-          <span class="badge badge-get">GET</span>/api/conditions
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/conditions</span>
+          <span class="ep-tag">catalog</span>
         </button>
         <button class="endpoint-btn" onclick="selectEndpoint('observations')">
-          <span class="badge badge-get">GET</span>/api/observations
+          <span class="badge badge-get">GET</span>
+          <span class="ep-name">/observations</span>
+          <span class="ep-tag">catalog</span>
         </button>
       </div>
     </div>
 
-    <!-- Server -->
-    <div class="panel">
-      <div class="panel-header">Server</div>
+    <div class="panel" id="panelServer">
+      <div class="panel-header" onclick="togglePanel('panelServer')">
+        Server <span class="chevron">▾</span>
+      </div>
       <div class="panel-body">
         <div>
           <label>Base URL</label>
-          <input type="text" id="baseUrl" value="http://localhost:8000" style="width:100%;background:#171923;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;padding:7px 10px;font-size:0.85rem;outline:none;" />
+          <input type="text" id="baseUrl" value="http://localhost:8000" oninput="onBaseUrlChange()" />
         </div>
       </div>
     </div>
 
-    <!-- Parameters -->
-    <div class="panel" id="paramsPanel">
-      <div class="panel-header">Parameters</div>
-      <div class="panel-body" id="paramsBody">
-        <!-- injected by JS -->
+    <div class="panel" id="panelParams">
+      <div class="panel-header" onclick="togglePanel('panelParams')">
+        Parameters <span class="chevron">▾</span>
+      </div>
+      <div class="panel-body" id="paramsBody"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="sendBtn" onclick="sendRequest()">
+        Send Request <span class="btn-hint">Ctrl+Enter</span>
+      </button>
+      <div class="row2">
+        <button class="btn btn-secondary" onclick="resetParams()">Reset</button>
+        <button class="btn btn-secondary" onclick="clearResponse()">Clear</button>
       </div>
     </div>
 
-    <!-- Actions -->
-    <button class="btn btn-primary" id="sendBtn" onclick="sendRequest()">Send Request</button>
-    <button class="btn btn-secondary" onclick="clearResponse()">Clear</button>
+    <div class="panel" id="panelHistory">
+      <div class="panel-header" onclick="togglePanel('panelHistory')">
+        History <span class="chevron">▾</span>
+      </div>
+      <div class="panel-body" id="historyBody">
+        <p class="hint">No requests yet.</p>
+      </div>
+    </div>
 
   </div>
 
-  <!-- Main -->
   <div class="main">
     <div class="toolbar">
       <span class="badge badge-get">GET</span>
-      <div class="url-bar" id="urlBar">—</div>
+      <div class="url-bar" id="urlBar" title="">—</div>
+      <button class="icon-btn" onclick="copyUrl()" id="copyUrlBtn">Copy URL</button>
       <div class="spinner" id="spinner"></div>
-      <div class="status-badge status-neutral" id="statusBadge">—</div>
+      <div class="status-badge s-neutral" id="statusBadge">—</div>
     </div>
 
     <div class="stats" id="statsBar" style="display:none">
@@ -129,16 +293,32 @@
     </div>
 
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('body')">Body</div>
-      <div class="tab" onclick="switchTab('pretty')">Pretty</div>
-      <button class="copy-btn" id="copyBtn" onclick="copyResponse()" style="display:none">Copy</button>
+      <div class="tab active" id="tab-btn-raw" onclick="switchTab('raw')">Raw</div>
+      <div class="tab" id="tab-btn-pretty" onclick="switchTab('pretty')">Pretty</div>
+      <div class="tab" id="tab-btn-ndjson" onclick="switchTab('ndjson')" style="display:none">NDJSON</div>
+      <div class="tab-spacer"></div>
+      <div class="tab-actions">
+        <button class="icon-btn" id="copyBtn" onclick="copyResponse()" style="display:none">Copy</button>
+        <button class="icon-btn" id="downloadBtn" onclick="downloadResponse()" style="display:none">Download</button>
+      </div>
     </div>
 
-    <div class="tab-content active" id="tab-body">
-      <pre id="responseRaw" style="color:#718096">Hit "Send Request" to see the response.</pre>
-    </div>
-    <div class="tab-content" id="tab-pretty">
-      <pre id="responsePretty" style="color:#718096"></pre>
+    <div class="response-area">
+      <div class="tab-content active" id="tab-raw">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">⚡</div>
+          <div class="empty-title">Ready to send</div>
+          <div class="empty-sub">Select an endpoint and press Ctrl+Enter</div>
+        </div>
+        <pre id="responseRaw" style="display:none;color:#c9d1d9"></pre>
+        <div id="errorBox" class="error-box" style="display:none"></div>
+      </div>
+      <div class="tab-content" id="tab-pretty">
+        <pre id="responsePretty" style="color:#c9d1d9"></pre>
+      </div>
+      <div class="tab-content" id="tab-ndjson">
+        <div class="ndjson-view" id="ndjsonView"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -146,123 +326,195 @@
 <script>
   let currentEndpoint = 'cohort';
   let lastResponse = null;
+  let lastFormat = 'bundle';
   let conditions = [];
+  let conditionsFetched = false;
+  let reqHistory = [];
+
+  const ENDPOINT_KEYS = ['cohort','patient','practitioner','organization','conditions','observations'];
 
   const ENDPOINTS = {
-    cohort: {
-      path: '/api/generate/cohort',
-      params: ['count', 'version', 'age_min', 'age_max', 'condition', 'seed', 'num_practitioners', 'num_organizations'],
-    },
-    patient: {
-      path: '/api/generate/patient',
-      params: ['count', 'version', 'age_min', 'age_max', 'seed'],
-    },
-    conditions: { path: '/api/conditions', params: [] },
-    observations: { path: '/api/observations', params: [] },
+    cohort:       { path: '/api/generate/cohort',       params: ['count','version','age_min','age_max','condition','num_practitioners','num_organizations','bundle_type','format','profile','seed'] },
+    patient:      { path: '/api/generate/patient',      params: ['count','version','age_min','age_max','bundle_type','profile','seed'] },
+    practitioner: { path: '/api/generate/practitioner', params: ['count','version','bundle_type','seed'] },
+    organization: { path: '/api/generate/organization', params: ['count','version','bundle_type','seed'] },
+    conditions:   { path: '/api/conditions',            params: [] },
+    observations: { path: '/api/observations',          params: [] },
   };
 
   const PARAM_DEFS = {
-    count:              { label: 'count', type: 'number', default: 10, min: 1, max: 1000 },
-    version:            { label: 'version', type: 'select', options: ['R4', 'R5'], default: 'R4' },
-    age_min:            { label: 'age_min', type: 'number', default: 0, min: 0, max: 119 },
-    age_max:            { label: 'age_max', type: 'number', default: 80, min: 1, max: 120 },
-    condition:          { label: 'condition (optional)', type: 'condition-picker', default: '' },
-    seed:               { label: 'seed (optional)', type: 'number', default: '', min: 0 },
-    num_practitioners:  { label: 'num_practitioners', type: 'number', default: 3, min: 1, max: 50 },
-    num_organizations:  { label: 'num_organizations', type: 'number', default: 1, min: 1, max: 10 },
+    count:             { label: 'count',                  type: 'number',  default: 10,  min: 1,  max: 1000 },
+    version:           { label: 'version',                type: 'toggle',  options: ['R4','R5'],                  default: 'R4' },
+    age_min:           { label: 'age_min',                type: 'number',  default: 0,   min: 0,  max: 119 },
+    age_max:           { label: 'age_max',                type: 'number',  default: 80,  min: 1,  max: 120 },
+    condition:         { label: 'condition',              type: 'condition-picker', default: '' },
+    seed:              { label: 'seed (optional)',         type: 'number',  default: '',  min: 0 },
+    num_practitioners: { label: 'num_practitioners',      type: 'number',  default: 3,   min: 1,  max: 50 },
+    num_organizations: { label: 'num_organizations',      type: 'number',  default: 1,   min: 1,  max: 10 },
+    bundle_type:       { label: 'bundle_type',            type: 'toggle',  options: ['collection','transaction'],  default: 'collection' },
+    format:            { label: 'format',                 type: 'toggle',  options: ['bundle','ndjson'],           default: 'bundle' },
+    profile:           { label: 'profile',                type: 'toggle',  options: ['base','us-core'],            default: 'base' },
   };
 
+  // Param groups per endpoint for visual grouping
+  const PARAM_GROUPS = {
+    cohort: [
+      { label: null,             pair: true,  params: ['count','version'] },
+      { label: 'Age Range',      pair: true,  params: ['age_min','age_max'] },
+      { label: 'Condition',      pair: false, params: ['condition'] },
+      { label: 'Shared',         pair: true,  params: ['num_practitioners','num_organizations'] },
+      { label: 'Output',         pair: false, params: ['bundle_type','format','profile'] },
+      { label: null,             pair: false, params: ['seed'] },
+    ],
+    patient: [
+      { label: null,             pair: true,  params: ['count','version'] },
+      { label: 'Age Range',      pair: true,  params: ['age_min','age_max'] },
+      { label: 'Output',         pair: true,  params: ['bundle_type','profile'] },
+      { label: null,             pair: false, params: ['seed'] },
+    ],
+    practitioner: [
+      { label: null,             pair: true,  params: ['count','version'] },
+      { label: 'Output',         pair: false, params: ['bundle_type'] },
+      { label: null,             pair: false, params: ['seed'] },
+    ],
+    organization: [
+      { label: null,             pair: true,  params: ['count','version'] },
+      { label: 'Output',         pair: false, params: ['bundle_type'] },
+      { label: null,             pair: false, params: ['seed'] },
+    ],
+    conditions:   [],
+    observations: [],
+  };
+
+  // ── Panel collapse ────────────────────────────────────────────────────────
+  function togglePanel(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+  }
+
+  // ── Endpoint selection ────────────────────────────────────────────────────
   function selectEndpoint(name) {
     currentEndpoint = name;
     document.querySelectorAll('.endpoint-btn').forEach((b, i) => {
-      b.classList.toggle('active', ['cohort','patient','conditions','observations'][i] === name);
+      b.classList.toggle('active', ENDPOINT_KEYS[i] === name);
     });
     renderParams();
     updateUrlBar();
   }
 
+  // ── Params rendering ──────────────────────────────────────────────────────
   function renderParams() {
     const body = document.getElementById('paramsBody');
-    const params = ENDPOINTS[currentEndpoint].params;
-    if (params.length === 0) {
+    const groups = PARAM_GROUPS[currentEndpoint];
+    if (!groups || groups.length === 0) {
       body.innerHTML = '<p class="hint">No parameters for this endpoint.</p>';
       return;
     }
     body.innerHTML = '';
-    params.forEach(p => {
-      const def = PARAM_DEFS[p];
-      const wrapper = document.createElement('div');
-      const lbl = document.createElement('label');
-      lbl.textContent = def.label;
-      wrapper.appendChild(lbl);
-
-      if (def.type === 'select') {
-        const sel = document.createElement('select');
-        sel.id = 'param_' + p;
-        def.options.forEach(o => {
-          const opt = document.createElement('option');
-          opt.value = o; opt.textContent = o;
-          if (o === def.default) opt.selected = true;
-          sel.appendChild(opt);
-        });
-        sel.onchange = updateUrlBar;
-        wrapper.appendChild(sel);
-
-      } else if (def.type === 'condition-picker') {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.id = 'param_' + p;
-        hiddenInput.value = def.default;
-        wrapper.appendChild(hiddenInput);
-
-        const list = document.createElement('div');
-        list.className = 'conditions-list';
-        list.id = 'conditionList';
-        if (conditions.length === 0) {
-          list.innerHTML = '<span class="hint">Loading conditions...</span>';
-          fetchConditions().then(() => renderConditionTags(list, hiddenInput));
-        } else {
-          renderConditionTags(list, hiddenInput);
-        }
-        wrapper.appendChild(list);
-
-      } else {
-        const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.id = 'param_' + p;
-        inp.value = def.default;
-        if (def.min !== undefined) inp.min = def.min;
-        if (def.max !== undefined) inp.max = def.max;
-        inp.oninput = updateUrlBar;
-        wrapper.appendChild(inp);
+    groups.forEach(group => {
+      if (group.label) {
+        const gl = document.createElement('div');
+        gl.className = 'group-label';
+        gl.textContent = group.label;
+        body.appendChild(gl);
       }
-      body.appendChild(wrapper);
+      if (group.pair && group.params.length === 2) {
+        const row = document.createElement('div');
+        row.className = 'row2';
+        group.params.forEach(p => row.appendChild(buildParamEl(p)));
+        body.appendChild(row);
+      } else {
+        group.params.forEach(p => body.appendChild(buildParamEl(p)));
+      }
     });
     updateUrlBar();
   }
 
-  function renderConditionTags(container, hiddenInput) {
-    container.innerHTML = '';
-    const noneTag = document.createElement('div');
-    noneTag.className = 'condition-tag selected';
-    noneTag.textContent = 'Any';
-    noneTag.dataset.value = '';
-    noneTag.onclick = () => selectConditionTag('', container, hiddenInput);
-    container.appendChild(noneTag);
+  function buildParamEl(p) {
+    const def = PARAM_DEFS[p];
+    const wrap = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.textContent = def.label;
+    wrap.appendChild(lbl);
 
+    if (def.type === 'toggle') {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.id = 'param_' + p;
+      hidden.value = def.default;
+
+      const grp = document.createElement('div');
+      grp.className = 'toggle-group';
+      def.options.forEach(o => {
+        const btn = document.createElement('button');
+        btn.className = 'toggle-opt' + (o === def.default ? ' active' : '');
+        btn.textContent = o;
+        btn.onclick = () => {
+          grp.querySelectorAll('.toggle-opt').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          hidden.value = o;
+          updateUrlBar();
+        };
+        grp.appendChild(btn);
+      });
+      wrap.appendChild(grp);
+      wrap.appendChild(hidden);
+
+    } else if (def.type === 'condition-picker') {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.id = 'param_' + p;
+      hidden.value = '';
+
+      const list = document.createElement('div');
+      list.className = 'conditions-list';
+      list.id = 'conditionList';
+
+      if (!conditionsFetched) {
+        list.innerHTML = '<span class="hint">Loading conditions…</span>';
+        fetchConditions().then(() => { conditionsFetched = true; renderConditionTags(list, hidden); });
+      } else {
+        renderConditionTags(list, hidden);
+      }
+      wrap.appendChild(hidden);
+      wrap.appendChild(list);
+
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.id = 'param_' + p;
+      inp.value = def.default;
+      if (def.min !== undefined) inp.min = def.min;
+      if (def.max !== undefined) inp.max = def.max;
+      inp.oninput = updateUrlBar;
+      wrap.appendChild(inp);
+    }
+    return wrap;
+  }
+
+  function resetParams() { renderParams(); }
+
+  // ── Condition picker ──────────────────────────────────────────────────────
+  function renderConditionTags(container, hidden) {
+    container.innerHTML = '';
+    const any = document.createElement('div');
+    any.className = 'condition-tag selected';
+    any.textContent = 'Any condition';
+    any.dataset.value = '';
+    any.onclick = () => pickCondition('', container, hidden);
+    container.appendChild(any);
     conditions.forEach(c => {
       const tag = document.createElement('div');
       tag.className = 'condition-tag';
       tag.textContent = c.display;
       tag.dataset.value = c.key;
       tag.title = c.key;
-      tag.onclick = () => selectConditionTag(c.key, container, hiddenInput);
+      tag.onclick = () => pickCondition(c.key, container, hidden);
       container.appendChild(tag);
     });
   }
 
-  function selectConditionTag(value, container, hiddenInput) {
-    hiddenInput.value = value;
+  function pickCondition(value, container, hidden) {
+    hidden.value = value;
     container.querySelectorAll('.condition-tag').forEach(t => {
       t.classList.toggle('selected', t.dataset.value === value);
     });
@@ -272,18 +524,15 @@
   async function fetchConditions() {
     try {
       const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
-      const res = await fetch(base + '/api/conditions');
-      const data = await res.json();
-      conditions = data;
-    } catch (e) {
-      conditions = [];
-    }
+      const res = await fetch(base + '/api/conditions', { signal: AbortSignal.timeout(4000) });
+      conditions = await res.json();
+    } catch { conditions = []; }
   }
 
+  // ── URL helpers ───────────────────────────────────────────────────────────
   function getParamValues() {
-    const params = ENDPOINTS[currentEndpoint].params;
     const out = {};
-    params.forEach(p => {
+    ENDPOINTS[currentEndpoint].params.forEach(p => {
       const el = document.getElementById('param_' + p);
       if (!el) return;
       const v = el.value;
@@ -292,29 +541,81 @@
     return out;
   }
 
-  function buildUrl(includeBase = true) {
+  function buildUrl() {
     const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
     const path = ENDPOINTS[currentEndpoint].path;
     const vals = getParamValues();
     const qs = new URLSearchParams();
     Object.entries(vals).forEach(([k, v]) => { if (v !== '') qs.set(k, v); });
-    const qstr = qs.toString();
-    return (includeBase ? base : '') + path + (qstr ? '?' + qstr : '');
+    const q = qs.toString();
+    return base + path + (q ? '?' + q : '');
   }
 
   function updateUrlBar() {
-    document.getElementById('urlBar').textContent = buildUrl();
+    const url = buildUrl();
+    const bar = document.getElementById('urlBar');
+    bar.textContent = url;
+    bar.title = url;
   }
 
+  function onBaseUrlChange() {
+    updateUrlBar();
+    checkServerHealth();
+  }
+
+  function copyUrl() {
+    navigator.clipboard.writeText(buildUrl());
+    const btn = document.getElementById('copyUrlBtn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }
+
+  // ── Server health ─────────────────────────────────────────────────────────
+  async function checkServerHealth() {
+    const dot = document.getElementById('serverDot');
+    const lbl = document.getElementById('serverLabel');
+    dot.className = 'status-dot checking';
+    lbl.textContent = 'checking…';
+    try {
+      const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+      const t0 = performance.now();
+      const res = await fetch(base + '/api/conditions', { signal: AbortSignal.timeout(3000) });
+      const ms = Math.round(performance.now() - t0);
+      if (res.ok) {
+        dot.className = 'status-dot online';
+        lbl.textContent = `online · ${ms} ms`;
+        if (!conditionsFetched) {
+          conditions = await res.json();
+          conditionsFetched = true;
+          const list = document.getElementById('conditionList');
+          const hidden = document.getElementById('param_condition');
+          if (list && hidden) renderConditionTags(list, hidden);
+        }
+      } else {
+        dot.className = 'status-dot offline';
+        lbl.textContent = `error ${res.status}`;
+      }
+    } catch {
+      dot.className = 'status-dot offline';
+      lbl.textContent = 'offline';
+    }
+  }
+
+  // ── Send request ──────────────────────────────────────────────────────────
   async function sendRequest() {
     const btn = document.getElementById('sendBtn');
     const spinner = document.getElementById('spinner');
     btn.disabled = true;
     spinner.style.display = 'block';
-    document.getElementById('statusBadge').className = 'status-badge status-neutral';
-    document.getElementById('statusBadge').textContent = '…';
+
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge s-neutral';
+    badge.textContent = '…';
     document.getElementById('statsBar').style.display = 'none';
     document.getElementById('copyBtn').style.display = 'none';
+    document.getElementById('downloadBtn').style.display = 'none';
+    document.getElementById('tab-btn-ndjson').style.display = 'none';
 
     const url = buildUrl();
     const t0 = performance.now();
@@ -324,86 +625,224 @@
       const elapsed = Math.round(performance.now() - t0);
       const text = await res.text();
       const sizeKb = (new TextEncoder().encode(text).length / 1024).toFixed(1);
+      const contentType = res.headers.get('content-type') || '';
 
       lastResponse = text;
-      document.getElementById('responseRaw').textContent = text;
+      lastFormat = getParamValues().format || 'bundle';
+      const isNdjson = lastFormat === 'ndjson' || contentType.includes('ndjson');
+
+      showRaw(text);
 
       let resourceCount = '—';
-      try {
-        const json = JSON.parse(text);
-        if (Array.isArray(json)) resourceCount = json.length;
-        else if (json.entry) resourceCount = json.entry.length;
-        document.getElementById('responsePretty').textContent = JSON.stringify(json, null, 2);
-        applySyntaxColors('responsePretty');
-      } catch { document.getElementById('responsePretty').textContent = text; }
+      if (isNdjson) {
+        const lines = text.trim().split('\n').filter(l => l.trim());
+        resourceCount = lines.length;
+        renderNdjson(lines);
+        document.getElementById('tab-btn-ndjson').style.display = 'block';
+        document.getElementById('responsePretty').textContent = '';
+        switchTab('ndjson');
+      } else {
+        try {
+          const json = JSON.parse(text);
+          if (Array.isArray(json)) resourceCount = json.length;
+          else if (json.entry) resourceCount = json.entry.length;
+          document.getElementById('responsePretty').textContent = JSON.stringify(json, null, 2);
+        } catch {
+          document.getElementById('responsePretty').textContent = text;
+        }
+      }
 
-      const badge = document.getElementById('statusBadge');
       badge.textContent = res.status + ' ' + res.statusText;
-      badge.className = 'status-badge ' + (res.ok ? 'status-ok' : 'status-err');
-
+      badge.className = 'status-badge ' + (res.ok ? 's-ok' : 's-err');
       document.getElementById('statTime').textContent = elapsed;
       document.getElementById('statSize').textContent = sizeKb;
       document.getElementById('statResources').textContent = resourceCount;
       document.getElementById('statsBar').style.display = 'flex';
       document.getElementById('copyBtn').style.display = 'block';
+      document.getElementById('downloadBtn').style.display = 'block';
+
+      addHistory({ url, endpoint: currentEndpoint, status: res.status, ok: res.ok, time: elapsed, size: sizeKb });
 
     } catch (e) {
       lastResponse = null;
-      document.getElementById('responseRaw').textContent = 'Error: ' + e.message + '\n\nMake sure the SynthFHIR server is running at:\n' + document.getElementById('baseUrl').value;
-      document.getElementById('responsePretty').textContent = '';
-      document.getElementById('statusBadge').className = 'status-badge status-err';
-      document.getElementById('statusBadge').textContent = 'Network Error';
+      showError(e.message);
+      badge.className = 'status-badge s-err';
+      badge.textContent = 'Network Error';
+      checkServerHealth();
     }
 
     btn.disabled = false;
     spinner.style.display = 'none';
   }
 
-  function applySyntaxColors(id) {
-    // minimal JSON syntax highlighting via innerHTML replacement
-    const el = document.getElementById(id);
+  function showRaw(text) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    const pre = document.getElementById('responseRaw');
+    pre.style.display = 'block';
+    pre.textContent = text;
+    if (!document.getElementById('tab-raw').classList.contains('active')) switchTab('raw');
+  }
+
+  function showError(msg) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('responseRaw').style.display = 'none';
+    const box = document.getElementById('errorBox');
+    box.style.display = 'block';
+    const base = document.getElementById('baseUrl').value;
+    box.innerHTML = `
+      <div class="error-title">Network Error</div>
+      <div class="error-msg">${esc(msg)}</div>
+      <div class="error-hint">Is SynthFHIR running at <code style="font-family:monospace;color:#58a6ff">${esc(base)}</code>?</div>`;
+    switchTab('raw');
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── NDJSON view ───────────────────────────────────────────────────────────
+  function renderNdjson(lines) {
+    const view = document.getElementById('ndjsonView');
+    view.innerHTML = '';
+    lines.forEach((line, i) => {
+      let json = null;
+      try { json = JSON.parse(line); } catch {}
+      const item = document.createElement('div');
+      item.className = 'ndjson-item';
+
+      const hdr = document.createElement('div');
+      hdr.className = 'ndjson-header';
+      hdr.innerHTML = `
+        <span style="color:#484f58;font-family:monospace;font-size:0.68rem">#${i+1}</span>
+        <span class="ndjson-type">${json ? (json.resourceType || '?') : 'parse error'}</span>
+        ${json && json.id ? `<span class="ndjson-id">${json.id}</span>` : ''}
+        <span class="ndjson-toggle">▼</span>`;
+
+      const body = document.createElement('div');
+      body.className = 'ndjson-body';
+      const pre = document.createElement('pre');
+      pre.style.color = '#c9d1d9';
+      pre.textContent = json ? JSON.stringify(json, null, 2) : line;
+      body.appendChild(pre);
+
+      hdr.onclick = () => {
+        const open = body.classList.toggle('open');
+        hdr.querySelector('.ndjson-toggle').textContent = open ? '▲' : '▼';
+        if (open) syntaxColorEl(pre);
+      };
+
+      item.appendChild(hdr);
+      item.appendChild(body);
+      view.appendChild(item);
+    });
+  }
+
+  // ── Syntax highlighting ───────────────────────────────────────────────────
+  function syntaxColorEl(el) {
     const text = el.textContent;
     el.innerHTML = text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
-        let cls = 'color:#fc8181'; // number
-        if (/^"/.test(match)) {
-          cls = /:$/.test(match) ? 'color:#63b3ed' : 'color:#9ae6b4'; // key vs string
-        } else if (/true|false/.test(match)) cls = 'color:#f6ad55';
-        else if (/null/.test(match)) cls = 'color:#718096';
-        return `<span style="${cls}">${match}</span>`;
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+        let c = 'color:#f85149';
+        if (/^"/.test(m)) c = /:$/.test(m) ? 'color:#58a6ff' : 'color:#3fb950';
+        else if (/true|false/.test(m)) c = 'color:#d29922';
+        else if (/null/.test(m)) c = 'color:#484f58';
+        return `<span style="${c}">${m}</span>`;
       });
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  function switchTab(name) {
+    ['raw','pretty','ndjson'].forEach(n => {
+      document.getElementById('tab-btn-' + n)?.classList.toggle('active', n === name);
+      document.getElementById('tab-' + n)?.classList.toggle('active', n === name);
+    });
+    if (name === 'pretty') {
+      const el = document.getElementById('responsePretty');
+      if (el.textContent.trim()) syntaxColorEl(el);
+    }
+  }
+
+  // ── History ───────────────────────────────────────────────────────────────
+  function addHistory(entry) {
+    reqHistory.unshift(entry);
+    if (reqHistory.length > 8) reqHistory.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const body = document.getElementById('historyBody');
+    body.innerHTML = '';
+    if (reqHistory.length === 0) {
+      body.innerHTML = '<p class="hint">No requests yet.</p>';
+      return;
+    }
+    reqHistory.forEach((h, i) => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.title = h.url;
+      item.onclick = () => selectEndpoint(h.endpoint);
+      item.innerHTML = `
+        <div class="history-top">
+          <span class="badge badge-get" style="font-size:0.58rem">GET</span>
+          <span class="history-path">${ENDPOINTS[h.endpoint].path}</span>
+          <span class="history-status ${h.ok ? 'ok' : 'err'}">${h.status}</span>
+        </div>
+        <div class="history-meta"><span>${h.time} ms</span><span>${h.size} KB</span></div>`;
+      body.appendChild(item);
+    });
+  }
+
+  // ── Copy / Download / Clear ───────────────────────────────────────────────
+  function copyResponse() {
+    if (!lastResponse) return;
+    navigator.clipboard.writeText(lastResponse);
+    const btn = document.getElementById('copyBtn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }
+
+  function downloadResponse() {
+    if (!lastResponse) return;
+    const ndjson = lastFormat === 'ndjson';
+    const blob = new Blob([lastResponse], { type: ndjson ? 'application/fhir+ndjson' : 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `synthfhir-${currentEndpoint}.${ndjson ? 'ndjson' : 'json'}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   function clearResponse() {
     lastResponse = null;
-    document.getElementById('responseRaw').textContent = 'Hit "Send Request" to see the response.';
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('responseRaw').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
     document.getElementById('responsePretty').textContent = '';
-    document.getElementById('statusBadge').className = 'status-badge status-neutral';
+    document.getElementById('ndjsonView').innerHTML = '';
+    document.getElementById('statusBadge').className = 'status-badge s-neutral';
     document.getElementById('statusBadge').textContent = '—';
     document.getElementById('statsBar').style.display = 'none';
     document.getElementById('copyBtn').style.display = 'none';
-    document.getElementById('urlBar').textContent = buildUrl();
+    document.getElementById('downloadBtn').style.display = 'none';
+    document.getElementById('tab-btn-ndjson').style.display = 'none';
+    switchTab('raw');
   }
 
-  function copyResponse() {
-    if (lastResponse) navigator.clipboard.writeText(lastResponse);
-  }
-
-  function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['body','pretty'][i] === name));
-    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    if (name === 'pretty') {
-      applySyntaxColors('responsePretty');
+  // ── Keyboard shortcut ─────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (!document.getElementById('sendBtn').disabled) sendRequest();
     }
-  }
+  });
 
-  // Init
+  // ── Init ──────────────────────────────────────────────────────────────────
   renderParams();
   updateUrlBar();
-  // Pre-fetch conditions for the picker
-  fetchConditions();
+  checkServerHealth();
 </script>
 </body>
 </html>

@@ -1,5 +1,9 @@
 # SynthFHIR
 
+[![CI](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml/badge.svg)](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A free, open-source, locally-hosted synthetic FHIR patient data generator. Produces fully relational clinical datasets with realistic, interconnected records across **15 resource types**, all linked by ID and conformant to FHIR R4/R5 and US Core profiles.
 
 Built with [Faker](https://faker.readthedocs.io/). No external APIs. No paid services. Runs entirely on your machine.

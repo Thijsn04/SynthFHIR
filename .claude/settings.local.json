@@ -29,7 +29,8 @@
       "PowerShell(pip show ruff 2>&1)",
       "PowerShell(pip install ruff 2>&1)",
       "PowerShell(pip install ruff)",
-      "PowerShell(python -m ruff --version)"
+      "PowerShell(python -m ruff --version)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\thijs\\\\Documents\\\\GitHub\\\\SynthFHIR\\\\.github\\\\ISSUE_TEMPLATE\")"
     ]
   }
 }

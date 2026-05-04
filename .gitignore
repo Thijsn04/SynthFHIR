@@ -1,6 +1,41 @@
-fhirdocs
+# Python
 __pycache__/
-.claude
-*.pyc
-*.pyo
-.idea
+*.py[cod]
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+!.env.example
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Linting / type checking
+.ruff_cache/
+.mypy_cache/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+fhirdocs/
+.claude/
+memory/
