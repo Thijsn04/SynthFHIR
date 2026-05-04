@@ -5,18 +5,14 @@ Run with:  pytest tests/test_generators.py -v
 import pytest
 
 from generators._rng import seed_all
-from generators.allergy_gen import generate_allergies_for_patient
 from generators.cohort_gen import generate_cohort
 from generators.condition_gen import generate_conditions_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
-from generators.encounter_gen import generate_encounter
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.medication_gen import generate_medications_for_patient
 from generators.observation_gen import generate_observations_for_encounter
 from generators.organization_gen import generate_organization
 from generators.patient_gen import generate_patient, generate_patients
-from generators.practitioner_gen import generate_practitioner
-from generators.related_person_gen import generate_related_persons
 
 
 # ---------------------------------------------------------------------------

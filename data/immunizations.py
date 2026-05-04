@@ -4,7 +4,7 @@ CVX codes are the CDC Vaccine Administered code set, the standard for US
 immunization records. Each ImmunizationDef includes the minimum and maximum
 patient age (in years) for which the vaccine is appropriate.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

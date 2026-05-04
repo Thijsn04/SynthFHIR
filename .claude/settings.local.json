@@ -21,7 +21,12 @@
       "Bash(python -m pytest tests/ -x -q)",
       "Bash(python -m ruff check .)",
       "Bash(.venv\\\\Scripts\\\\python -m ruff check .)",
-      "Bash(python -m pytest tests/ -q)"
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(ruff check *)",
+      "PowerShell(Get-Command ruff -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command python -ErrorAction SilentlyContinue)",
+      "PowerShell(python --version)",
+      "PowerShell(pip show ruff 2>&1)"
     ]
   }
 }

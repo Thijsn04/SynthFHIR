@@ -7,6 +7,7 @@ Output keys: id, patient_id, encounter_id, practitioner_id, status,
 category_code, category_display, loinc_code, display, effective_datetime,
 issued, observation_ids.
 """
+
 from generators._rng import new_uuid
 
 

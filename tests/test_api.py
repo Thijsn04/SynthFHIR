@@ -3,7 +3,6 @@
 Run with:  pytest tests/test_api.py -v
 Requires:  pip install httpx
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from main import app

@@ -180,8 +180,8 @@ class TestR4BundleBuilder:
     def setup_method(self):
         seed_all(0)
         raw = _raw()
-        from mappers.r4.patient import map_patient
         from mappers.r4.bundle import build_bundle
+        from mappers.r4.patient import map_patient
         self.resources = [map_patient(p) for p in raw["patients"]]
         self.bundle = build_bundle(self.resources)
 
