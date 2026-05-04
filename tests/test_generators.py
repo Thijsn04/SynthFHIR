@@ -191,12 +191,19 @@ class TestObservationGenerator:
     def test_baseline_vitals_always_present(self):
         obs = generate_observations_for_encounter("p", "e", "pr", "2024-01-01T10:00:00Z", [])
         loinc_codes = {o["loinc_code"] for o in obs}
-        assert "8480-6" in loinc_codes   # systolic_bp
-        assert "8462-4" in loinc_codes   # diastolic_bp
-        assert "8867-4" in loinc_codes   # heart_rate
-        assert "8310-5" in loinc_codes   # body_temperature
-        assert "9279-1" in loinc_codes   # respiratory_rate
-        assert "8302-2" in loinc_codes   # height
+        # BP is now a panel (85354-9) with systolic/diastolic as components
+        assert "85354-9" in loinc_codes   # blood pressure panel
+        assert "8867-4" in loinc_codes    # heart_rate
+        assert "8310-5" in loinc_codes    # body_temperature
+        assert "9279-1" in loinc_codes    # respiratory_rate
+        assert "8302-2" in loinc_codes    # height
+
+    def test_bp_panel_has_components(self):
+        obs = generate_observations_for_encounter("p", "e", "pr", "2024-01-01T10:00:00Z", [])
+        bp_panel = next(o for o in obs if o["loinc_code"] == "85354-9")
+        component_codes = {c["loinc_code"] for c in bp_panel["components"]}
+        assert "8480-6" in component_codes  # systolic
+        assert "8462-4" in component_codes  # diastolic
 
     def test_bmi_derived_not_independent(self):
         baseline = {"systolic_bp": 110, "diastolic_bp": 70, "heart_rate": 72,

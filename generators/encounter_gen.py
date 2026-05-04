@@ -45,6 +45,7 @@ def generate_encounter(
     patient_age: int = 30,
     days_ago_min: int = 1,
     days_ago_max: int = 730,
+    conditions: list[dict] | None = None,
 ) -> dict:
     # Age-appropriate encounter type weighting
     weights = [t[3] if patient_age < 18 else t[2] for t in _ENCOUNTER_TYPES]
@@ -64,6 +65,15 @@ def generate_encounter(
     start = now - timedelta(days=days_ago, hours=random.randint(8, 17), minutes=random.randint(0, 59))
     end = start + timedelta(minutes=random.randint(15, 60))
 
+    # Build reasonCode from active conditions (up to 2)
+    reason_codes: list[dict] = []
+    for cond in (conditions or []):
+        if cond.get("clinical_status") in ("active", "inactive") and len(reason_codes) < 2:
+            reason_codes.append({
+                "snomed_code": cond["snomed_code"],
+                "display": cond["display"],
+            })
+
     return {
         "id": new_uuid(),
         "patient_id": patient_id,
@@ -76,4 +86,5 @@ def generate_encounter(
         "type_display": type_display,
         "start_datetime": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "end_datetime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "reason_codes": reason_codes,
     }

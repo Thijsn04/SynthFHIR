@@ -76,7 +76,12 @@ class TestR4ObservationMapper:
         seed_all(0)
         raw = _raw()
         from mappers.r4.observation import map_observation
-        self.resource = map_observation(raw["observations"][0])
+        # Use a non-BP-panel observation so valueQuantity is present
+        non_panel = next(o for o in raw["observations"] if o["loinc_code"] != "85354-9")
+        self.resource = map_observation(non_panel)
+        # Also map the BP panel for component tests
+        bp_panel_raw = next(o for o in raw["observations"] if o["loinc_code"] == "85354-9")
+        self.bp_panel = map_observation(bp_panel_raw)
 
     def test_resource_type(self):
         assert self.resource["resourceType"] == "Observation"
@@ -84,6 +89,18 @@ class TestR4ObservationMapper:
     def test_value_quantity_present(self):
         assert "valueQuantity" in self.resource
         assert "value" in self.resource["valueQuantity"]
+
+    def test_bp_panel_has_component(self):
+        assert "component" in self.bp_panel
+        assert len(self.bp_panel["component"]) == 2
+        codes = {c["code"]["coding"][0]["code"] for c in self.bp_panel["component"]}
+        assert "8480-6" in codes  # systolic
+        assert "8462-4" in codes  # diastolic
+
+    def test_reference_range_present(self):
+        assert "referenceRange" in self.resource
+        rr = self.resource["referenceRange"][0]
+        assert "low" in rr and "high" in rr
 
     def test_loinc_coding(self):
         codings = self.resource["code"]["coding"]

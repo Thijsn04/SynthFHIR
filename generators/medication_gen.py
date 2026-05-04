@@ -46,6 +46,7 @@ def generate_medications_for_patient(
             days_ago = random.randint(30, 365)
             authored = (date.today() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
 
+            supply_days = random.choice([30, 60, 90])
             results.append({
                 "id": new_uuid(),
                 "patient_id": patient_id,
@@ -61,6 +62,10 @@ def generate_medications_for_patient(
                 "frequency": med.frequency,
                 "frequency_code": med.frequency_code,
                 "authored_on": authored,
+                "dispense_quantity": supply_days,
+                "dispense_quantity_unit": "d",
+                "dispense_supply_days": supply_days,
+                "num_refills": random.randint(0, 5),
             })
 
     return results

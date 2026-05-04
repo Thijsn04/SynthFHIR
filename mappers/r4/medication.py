@@ -61,4 +61,19 @@ def map_medication(med: dict) -> dict:
                 ],
             }
         ],
+        "dispenseRequest": {
+            "numberOfRepeatsAllowed": med["num_refills"],
+            "quantity": {
+                "value": med["dispense_quantity"],
+                "unit": "day",
+                "system": "http://unitsofmeasure.org",
+                "code": med["dispense_quantity_unit"],
+            },
+            "expectedSupplyDuration": {
+                "value": med["dispense_supply_days"],
+                "unit": "days",
+                "system": "http://unitsofmeasure.org",
+                "code": "d",
+            },
+        },
     }

@@ -58,4 +58,5 @@ def map_condition(cond: dict) -> dict:
         "onsetDateTime": cond["onset_date"],
         "recordedDate": cond["recorded_date"],
         "recorder": ref("Practitioner", cond["practitioner_id"]),
+        **( {"encounter": ref("Encounter", cond["encounter_id"])} if cond.get("encounter_id") else {} ),
     }

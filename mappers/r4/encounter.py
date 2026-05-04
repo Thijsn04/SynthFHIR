@@ -5,7 +5,7 @@ _PROFILE = "http://hl7.org/fhir/StructureDefinition/Encounter"
 
 
 def map_encounter(enc: dict) -> dict:
-    return {
+    resource: dict = {
         "resourceType": "Encounter",
         "id": enc["id"],
         "meta": build_meta(_PROFILE),
@@ -38,3 +38,20 @@ def map_encounter(enc: dict) -> dict:
         },
         "serviceProvider": ref("Organization", enc["organization_id"]),
     }
+
+    if enc.get("reason_codes"):
+        resource["reasonCode"] = [
+            {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": rc["snomed_code"],
+                        "display": rc["display"],
+                    }
+                ],
+                "text": rc["display"],
+            }
+            for rc in enc["reason_codes"]
+        ]
+
+    return resource

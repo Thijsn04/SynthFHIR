@@ -239,8 +239,8 @@ OBSERVATIONS: dict[str, ObservationDef] = {
         ),
         ObservationDef(
             key="oxygen_saturation",
-            loinc_code="2708-6",
-            display="Oxygen saturation in Arterial blood",
+            loinc_code="59408-5",
+            display="Oxygen saturation by Pulse oximetry",
             category_code="vital-signs",
             category_display="Vital Signs",
             unit="%",

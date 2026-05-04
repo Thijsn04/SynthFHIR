@@ -13,6 +13,7 @@ from generators.patient_gen import generate_patients
 from mappers.r4 import allergy as r4_allergy
 from mappers.r4 import bundle as r4_bundle
 from mappers.r4 import condition as r4_condition
+from mappers.r4 import coverage as r4_coverage
 from mappers.r4 import diagnostic_report as r4_diagnostic_report
 from mappers.r4 import encounter as r4_encounter
 from mappers.r4 import immunization as r4_immunization
@@ -21,10 +22,13 @@ from mappers.r4 import observation as r4_observation
 from mappers.r4 import organization as r4_organization
 from mappers.r4 import patient as r4_patient
 from mappers.r4 import practitioner as r4_practitioner
+from mappers.r4 import procedure as r4_procedure
 from mappers.r4 import related_person as r4_related_person
+from mappers.r4 import service_request as r4_service_request
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import bundle as r5_bundle
 from mappers.r5 import condition as r5_condition
+from mappers.r5 import coverage as r5_coverage
 from mappers.r5 import diagnostic_report as r5_diagnostic_report
 from mappers.r5 import encounter as r5_encounter
 from mappers.r5 import immunization as r5_immunization
@@ -33,7 +37,9 @@ from mappers.r5 import observation as r5_observation
 from mappers.r5 import organization as r5_organization
 from mappers.r5 import patient as r5_patient
 from mappers.r5 import practitioner as r5_practitioner
+from mappers.r5 import procedure as r5_procedure
 from mappers.r5 import related_person as r5_related_person
+from mappers.r5 import service_request as r5_service_request
 
 router = APIRouter()
 
@@ -51,6 +57,9 @@ _OBS_MAPPER      = {"R4": r4_observation.map_observation,    "R5": r5_observatio
 _MED_MAPPER      = {"R4": r4_medication.map_medication,      "R5": r5_medication.map_medication}
 _IMM_MAPPER      = {"R4": r4_immunization.map_immunization,  "R5": r5_immunization.map_immunization}
 _DR_MAPPER       = {"R4": r4_diagnostic_report.map_diagnostic_report, "R5": r5_diagnostic_report.map_diagnostic_report}
+_PROC_MAPPER     = {"R4": r4_procedure.map_procedure,        "R5": r5_procedure.map_procedure}
+_SR_MAPPER       = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
+_COV_MAPPER      = {"R4": r4_coverage.map_coverage,          "R5": r5_coverage.map_coverage}
 _BUNDLE_BUILDER  = {"R4": r4_bundle.build_bundle,            "R5": r5_bundle.build_bundle}
 
 
@@ -63,6 +72,7 @@ def _map_and_bundle(raw: dict, version: str, bundle_type: str, us_core: bool) ->
     resources += [_ORG_MAPPER[v](o)           for o in raw["organizations"]]
     resources += [_PRAC_MAPPER[v](p)          for p in raw["practitioners"]]
     resources += [_PATIENT_MAPPER[v](p, us_core=us_core) for p in raw["patients"]]
+    resources += [_COV_MAPPER[v](c)           for c in raw.get("coverages", [])]
     resources += [_COND_MAPPER[v](c)          for c in raw["conditions"]]
     resources += [_ALLERGY_MAPPER[v](a)       for a in raw["allergies"]]
     resources += [_IMM_MAPPER[v](i)           for i in raw.get("immunizations", [])]
@@ -71,6 +81,8 @@ def _map_and_bundle(raw: dict, version: str, bundle_type: str, us_core: bool) ->
     resources += [_OBS_MAPPER[v](o)           for o in raw["observations"]]
     resources += [_DR_MAPPER[v](d)            for d in raw.get("diagnostic_reports", [])]
     resources += [_MED_MAPPER[v](m)           for m in raw.get("medications", [])]
+    resources += [_PROC_MAPPER[v](p)          for p in raw.get("procedures", [])]
+    resources += [_SR_MAPPER[v](s)            for s in raw.get("service_requests", [])]
 
     return _BUNDLE_BUILDER[v](resources, bundle_type=bundle_type)
 
@@ -103,6 +115,7 @@ def _ndjson_stream(raw: dict, version: str, us_core: bool):
         (_ORG_MAPPER[v],     raw["organizations"],              {}),
         (_PRAC_MAPPER[v],    raw["practitioners"],              {}),
         (_PATIENT_MAPPER[v], raw["patients"],                   {"us_core": us_core}),
+        (_COV_MAPPER[v],     raw.get("coverages", []),          {}),
         (_COND_MAPPER[v],    raw["conditions"],                 {}),
         (_ALLERGY_MAPPER[v], raw["allergies"],                  {}),
         (_IMM_MAPPER[v],     raw.get("immunizations", []),      {}),
@@ -111,6 +124,8 @@ def _ndjson_stream(raw: dict, version: str, us_core: bool):
         (_OBS_MAPPER[v],     raw["observations"],               {}),
         (_DR_MAPPER[v],      raw.get("diagnostic_reports", []), {}),
         (_MED_MAPPER[v],     raw.get("medications", []),        {}),
+        (_PROC_MAPPER[v],    raw.get("procedures", []),         {}),
+        (_SR_MAPPER[v],      raw.get("service_requests", []),   {}),
     ]
     for mapper_fn, items, kwargs in mappers:
         for item in items:

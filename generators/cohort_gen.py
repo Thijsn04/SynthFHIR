@@ -14,6 +14,7 @@ from datetime import date, datetime
 from generators._rng import seed_all
 from generators.allergy_gen import generate_allergies_for_patient
 from generators.condition_gen import generate_conditions_for_patient
+from generators.coverage_gen import generate_coverage_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
 from generators.encounter_gen import generate_encounter
 from generators.immunization_gen import generate_immunizations_for_patient
@@ -22,7 +23,9 @@ from generators.observation_gen import generate_observations_for_encounter
 from generators.organization_gen import generate_organization
 from generators.patient_gen import generate_patient
 from generators.practitioner_gen import generate_practitioner
+from generators.procedure_gen import generate_procedures_for_encounter
 from generators.related_person_gen import generate_related_persons
+from generators.service_request_gen import generate_service_requests_for_encounter
 
 _MAX_ENCOUNTERS_PER_PATIENT = 5
 
@@ -62,6 +65,9 @@ def generate_cohort(
     observations: list[dict] = []
     diagnostic_reports: list[dict] = []
     medications: list[dict] = []
+    procedures: list[dict] = []
+    service_requests: list[dict] = []
+    coverages: list[dict] = []
 
     for _ in range(count):
         patient = generate_patient(age_min=age_min, age_max=age_max)
@@ -94,6 +100,9 @@ def generate_cohort(
             generate_immunizations_for_patient(patient["id"], prac_id, patient_age)
         )
 
+        # Insurance coverage — one per patient
+        coverages.append(generate_coverage_for_patient(patient["id"], patient_age))
+
         # Family / emergency contacts — age + marital status aware
         related_persons.extend(generate_related_persons(patient))
 
@@ -101,6 +110,7 @@ def generate_cohort(
         num_enc = min(max(1, len(pt_conditions) * 2), _MAX_ENCOUNTERS_PER_PATIENT)
         window_per_enc = enc_window // num_enc
 
+        first_enc_written = False
         for enc_idx in range(num_enc):
             enc = generate_encounter(
                 patient_id=patient["id"],
@@ -109,8 +119,15 @@ def generate_cohort(
                 patient_age=patient_age,
                 days_ago_min=max(1, enc_idx * window_per_enc),
                 days_ago_max=(enc_idx + 1) * window_per_enc,
+                conditions=pt_conditions,
             )
             encounters.append(enc)
+
+            # Link all conditions to the first encounter (diagnosis visit)
+            if not first_enc_written:
+                for cond in pt_conditions:
+                    cond["encounter_id"] = enc["id"]
+                first_enc_written = True
 
             # Observations — longitudinally consistent vitals + condition labs
             enc_obs = generate_observations_for_encounter(
@@ -135,6 +152,28 @@ def generate_cohort(
                 )
             )
 
+            # Procedures — general exam + condition-specific procedures
+            procedures.extend(
+                generate_procedures_for_encounter(
+                    patient_id=patient["id"],
+                    encounter_id=enc["id"],
+                    practitioner_id=prac_id,
+                    performed_datetime=enc["start_datetime"],
+                    conditions=pt_conditions,
+                )
+            )
+
+            # ServiceRequests — lab/imaging/referral orders for this encounter
+            service_requests.extend(
+                generate_service_requests_for_encounter(
+                    patient_id=patient["id"],
+                    encounter_id=enc["id"],
+                    practitioner_id=prac_id,
+                    conditions=pt_conditions,
+                    authored_on=enc["start_datetime"][:10],
+                )
+            )
+
         # MedicationRequests — one set per patient (linked to first encounter)
         first_enc_id = encounters[-num_enc]["id"] if encounters else ""
         medications.extend(
@@ -150,6 +189,7 @@ def generate_cohort(
         "organizations": organizations,
         "practitioners": practitioners,
         "patients": patients,
+        "coverages": coverages,
         "conditions": conditions,
         "allergies": allergies,
         "immunizations": immunizations,
@@ -158,6 +198,8 @@ def generate_cohort(
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
         "medications": medications,
+        "procedures": procedures,
+        "service_requests": service_requests,
     }
 
 

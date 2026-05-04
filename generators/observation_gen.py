@@ -21,8 +21,13 @@ import random
 from data.observations import OBSERVATIONS, ObservationDef
 from generators._rng import new_uuid
 
-# Vital signs included in every encounter regardless of conditions
-_BASELINE_OBS = ["systolic_bp", "diastolic_bp", "heart_rate", "respiratory_rate", "body_temperature"]
+# Vital signs included in every encounter regardless of conditions.
+# Blood pressure is generated as a panel (85354-9) with systolic/diastolic components,
+# so systolic_bp and diastolic_bp are excluded from the individual obs loop.
+_BASELINE_OBS = ["heart_rate", "respiratory_rate", "body_temperature"]
+
+_BP_PANEL_LOINC = "85354-9"
+_BP_PANEL_DISPLAY = "Blood pressure panel with all children optional"
 
 # Fraction of the normal range to use as per-encounter jitter around the patient baseline
 _BASELINE_JITTER_FRACTION = 0.08
@@ -53,8 +58,21 @@ def generate_observations_for_encounter(
             obs_keys.update(keys)
             active_condition_obs.update(keys)
 
-    result = []
+    # BP panel replaces separate systolic/diastolic observations.
+    # Track whether BP should be abnormal, then remove from individual loop.
+    bp_abnormal = "systolic_bp" in active_condition_obs or "diastolic_bp" in active_condition_obs
+    obs_keys.discard("systolic_bp")
+    obs_keys.discard("diastolic_bp")
+
+    result: list[dict] = []
     weight_kg: float | None = None
+
+    # Always generate the BP panel
+    result.append(_make_bp_panel(
+        patient_id, encounter_id, practitioner_id, effective_datetime,
+        is_abnormal=bp_abnormal,
+        obs_baseline=obs_baseline,
+    ))
 
     for key in obs_keys:
         obs_def = OBSERVATIONS.get(key)
@@ -109,9 +127,87 @@ def generate_observations_for_encounter(
                 "ucum_code": bmi_def.ucum_code,
                 "interpretation_code": interp_code,
                 "interpretation_display": interp_display,
+                "ref_range_low": bmi_def.normal_range[0],
+                "ref_range_high": bmi_def.normal_range[1],
+                "ref_range_unit": bmi_def.unit,
+                "ref_range_ucum": bmi_def.ucum_code,
             })
 
     return result
+
+
+def _make_bp_panel(
+    patient_id: str,
+    encounter_id: str,
+    practitioner_id: str,
+    effective_datetime: str,
+    is_abnormal: bool,
+    obs_baseline: dict | None,
+) -> dict:
+    sys_def = OBSERVATIONS["systolic_bp"]
+    dia_def = OBSERVATIONS["diastolic_bp"]
+
+    def _draw(obs_def: ObservationDef, personal_mid: float | None) -> float:
+        if is_abnormal:
+            lo, hi = obs_def.abnormal_range
+            return round(random.triangular(lo, hi, (lo + hi) / 2), obs_def.decimal_places)
+        if personal_mid is not None:
+            span = obs_def.normal_range[1] - obs_def.normal_range[0]
+            jitter = span * _BASELINE_JITTER_FRACTION
+            lo = max(obs_def.normal_range[0], personal_mid - jitter)
+            hi = min(obs_def.normal_range[1], personal_mid + jitter)
+            return round(random.triangular(lo, hi, personal_mid), obs_def.decimal_places)
+        lo, hi = obs_def.normal_range
+        return round(random.triangular(lo, hi, (lo + hi) / 2), obs_def.decimal_places)
+
+    sys_mid = obs_baseline.get("systolic_bp") if obs_baseline else None
+    dia_mid = obs_baseline.get("diastolic_bp") if obs_baseline else None
+    sys_val = _draw(sys_def, sys_mid)
+    dia_val = _draw(dia_def, dia_mid)
+
+    sys_interp, sys_interp_disp = _interpret(sys_val, sys_def.low_threshold, sys_def.high_threshold)
+    dia_interp, dia_interp_disp = _interpret(dia_val, dia_def.low_threshold, dia_def.high_threshold)
+
+    panel_interp_code = sys_interp or dia_interp
+    panel_interp_disp = sys_interp_disp or dia_interp_disp
+
+    return {
+        "id": new_uuid(),
+        "patient_id": patient_id,
+        "encounter_id": encounter_id,
+        "practitioner_id": practitioner_id,
+        "loinc_code": _BP_PANEL_LOINC,
+        "display": _BP_PANEL_DISPLAY,
+        "category_code": "vital-signs",
+        "category_display": "Vital Signs",
+        "status": "final",
+        "effective_datetime": effective_datetime,
+        "value": 0,       # not used — panel has no direct value
+        "unit": "",
+        "ucum_code": "",
+        "interpretation_code": panel_interp_code,
+        "interpretation_display": panel_interp_disp,
+        "components": [
+            {
+                "loinc_code": sys_def.loinc_code,
+                "display": sys_def.display,
+                "value": sys_val,
+                "unit": sys_def.unit,
+                "ucum_code": sys_def.ucum_code,
+                "interpretation_code": sys_interp,
+                "interpretation_display": sys_interp_disp,
+            },
+            {
+                "loinc_code": dia_def.loinc_code,
+                "display": dia_def.display,
+                "value": dia_val,
+                "unit": dia_def.unit,
+                "ucum_code": dia_def.ucum_code,
+                "interpretation_code": dia_interp,
+                "interpretation_display": dia_interp_disp,
+            },
+        ],
+    }
 
 
 def _make(
@@ -189,7 +285,7 @@ def _build(
     interp_code: str,
     interp_display: str,
 ) -> dict:
-    return {
+    d: dict = {
         "id": new_uuid(),
         "patient_id": patient_id,
         "encounter_id": encounter_id,
@@ -205,7 +301,14 @@ def _build(
         "ucum_code": obs.ucum_code,
         "interpretation_code": interp_code,
         "interpretation_display": interp_display,
+        "ref_range_low": obs.normal_range[0],
+        "ref_range_high": obs.normal_range[1],
+        "ref_range_unit": obs.unit,
+        "ref_range_ucum": obs.ucum_code,
     }
+    if obs.category_code == "survey":
+        d["value_type"] = "integer"
+    return d
 
 
 def _interpret(value: float, low: float | None, high: float | None) -> tuple[str, str]:
@@ -213,4 +316,4 @@ def _interpret(value: float, low: float | None, high: float | None) -> tuple[str
         return ("L", "Low")
     if high is not None and value > high:
         return ("H", "High")
-    return ("N", "Normal")
+    return ("", "")

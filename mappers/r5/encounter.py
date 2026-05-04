@@ -17,7 +17,7 @@ _STATUS_MAP = {"finished": "completed"}
 
 
 def map_encounter(enc: dict) -> dict:
-    return {
+    resource: dict = {
         "resourceType": "Encounter",
         "id": enc["id"],
         "meta": build_meta(_PROFILE),
@@ -58,3 +58,23 @@ def map_encounter(enc: dict) -> dict:
         },
         "serviceProvider": ref("Organization", enc["organization_id"]),
     }
+
+    # R5: reasonCode replaced by reason[].concept (CodeableReference)
+    if enc.get("reason_codes"):
+        resource["reason"] = [
+            {
+                "concept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": rc["snomed_code"],
+                            "display": rc["display"],
+                        }
+                    ],
+                    "text": rc["display"],
+                }
+            }
+            for rc in enc["reason_codes"]
+        ]
+
+    return resource

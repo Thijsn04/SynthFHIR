@@ -62,6 +62,7 @@ def map_condition(cond: dict) -> dict:
         "subject": ref("Patient", cond["patient_id"]),
         "onsetDateTime": cond["onset_date"],
         "recordedDate": cond["recorded_date"],
+        **( {"encounter": ref("Encounter", cond["encounter_id"])} if cond.get("encounter_id") else {} ),
         # R5: recorder removed; use participant[] with provenance-participant-type
         "participant": [
             {

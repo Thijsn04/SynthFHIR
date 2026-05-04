@@ -38,13 +38,19 @@ def map_observation(obs: dict) -> dict:
         "encounter": ref("Encounter", obs["encounter_id"]),
         "effectiveDateTime": obs["effective_datetime"],
         "performer": [ref("Practitioner", obs["practitioner_id"])],
-        "valueQuantity": {
+    }
+
+    if obs.get("components"):
+        resource["component"] = [_map_component(c) for c in obs["components"]]
+    elif obs.get("value_type") == "integer":
+        resource["valueInteger"] = int(obs["value"])
+    else:
+        resource["valueQuantity"] = {
             "value": obs["value"],
             "unit": obs["unit"],
             "system": "http://unitsofmeasure.org",
             "code": obs["ucum_code"],
-        },
-    }
+        }
 
     if obs.get("interpretation_code"):
         resource["interpretation"] = [
@@ -59,4 +65,55 @@ def map_observation(obs: dict) -> dict:
             }
         ]
 
+    if obs.get("ref_range_low") is not None:
+        ref_range: dict = {
+            "low": {
+                "value": obs["ref_range_low"],
+                "unit": obs["ref_range_unit"],
+                "system": "http://unitsofmeasure.org",
+                "code": obs["ref_range_ucum"],
+            },
+            "high": {
+                "value": obs["ref_range_high"],
+                "unit": obs["ref_range_unit"],
+                "system": "http://unitsofmeasure.org",
+                "code": obs["ref_range_ucum"],
+            },
+        }
+        resource["referenceRange"] = [ref_range]
+
     return resource
+
+
+def _map_component(comp: dict) -> dict:
+    c: dict = {
+        "code": {
+            "coding": [
+                {
+                    "system": "http://loinc.org",
+                    "code": comp["loinc_code"],
+                    "display": comp["display"],
+                }
+            ],
+            "text": comp["display"],
+        },
+        "valueQuantity": {
+            "value": comp["value"],
+            "unit": comp["unit"],
+            "system": "http://unitsofmeasure.org",
+            "code": comp["ucum_code"],
+        },
+    }
+    if comp.get("interpretation_code"):
+        c["interpretation"] = [
+            {
+                "coding": [
+                    {
+                        "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                        "code": comp["interpretation_code"],
+                        "display": comp["interpretation_display"],
+                    }
+                ]
+            }
+        ]
+    return c
