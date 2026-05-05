@@ -259,17 +259,22 @@ class TestCohortGenerator:
     def test_encounter_after_condition_onset(self):
         from datetime import datetime
         raw = generate_cohort(count=5, seed=42)
-        cond_recorded_dates = {
-            c["patient_id"]: c["recorded_date"] for c in raw["conditions"]
-        }
+        # The invariant is that encounters happen after the EARLIEST condition
+        # recorded date per patient (not necessarily all conditions).
+        earliest_by_patient: dict[str, str] = {}
+        for c in raw["conditions"]:
+            pid = c["patient_id"]
+            if pid not in earliest_by_patient or c["recorded_date"] < earliest_by_patient[pid]:
+                earliest_by_patient[pid] = c["recorded_date"]
         for enc in raw["encounters"]:
             pid = enc["patient_id"]
-            if pid not in cond_recorded_dates:
+            if pid not in earliest_by_patient:
                 continue
-            recorded = datetime.strptime(cond_recorded_dates[pid], "%Y-%m-%d")
+            recorded = datetime.strptime(earliest_by_patient[pid], "%Y-%m-%d")
             enc_start = datetime.strptime(enc["start_datetime"], "%Y-%m-%dT%H:%M:%SZ")
             assert enc_start >= recorded, (
-                f"Encounter {enc['start_datetime']} is before condition recorded {cond_recorded_dates[pid]}"
+                f"Encounter {enc['start_datetime']} is before earliest condition "
+                f"recorded {earliest_by_patient[pid]}"
             )
 
     def test_invalid_condition_filter_raises(self):

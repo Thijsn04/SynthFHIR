@@ -63,6 +63,9 @@ def map_observation(obs: dict) -> dict:
             }
         ]
 
+    if obs.get("based_on_service_request_id"):
+        resource["basedOn"] = [ref("ServiceRequest", obs["based_on_service_request_id"])]
+
     if obs.get("ref_range_low") is not None:
         ref_range: dict = {
             "low": {

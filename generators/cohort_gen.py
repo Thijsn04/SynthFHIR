@@ -2,11 +2,19 @@
 
 Generation order:
   Organization → Practitioner → Patient →
-    Condition → Allergy → Immunization → RelatedPerson →
-      Encounter → Observation → DiagnosticReport → MedicationRequest
+    Condition → (obs baseline update) → Allergy → Immunization → RelatedPerson →
+      [per encounter]:
+        Encounter → ServiceRequest → Observation → DiagnosticReport → Procedure →
+      MedicationRequest
 
 Temporal consistency guarantee: every encounter is scheduled after the patient's
 earliest condition was recorded, so no visit can precede its diagnosis.
+
+Phase 1 additions:
+- Comorbidity graph replaces random 40% in condition_gen.
+- update_obs_baseline_for_conditions called after conditions are resolved so
+  the patient's personal BP/HR/O2 midpoints reflect their active diagnoses.
+- ServiceRequests are generated before Observations so obs can carry basedOn refs.
 """
 import random
 from datetime import date, datetime
@@ -19,13 +27,19 @@ from generators.diagnostic_report_gen import generate_diagnostic_reports_for_enc
 from generators.encounter_gen import generate_encounter
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.medication_gen import generate_medications_for_patient
-from generators.observation_gen import generate_observations_for_encounter
+from generators.observation_gen import (
+    generate_observations_for_encounter,
+    update_obs_baseline_for_conditions,
+)
 from generators.organization_gen import generate_organization
 from generators.patient_gen import generate_patient
 from generators.practitioner_gen import generate_practitioner
 from generators.procedure_gen import generate_procedures_for_encounter
 from generators.related_person_gen import generate_related_persons
-from generators.service_request_gen import generate_service_requests_for_encounter
+from generators.service_request_gen import (
+    build_sr_basedOn_map,
+    generate_service_requests_for_encounter,
+)
 
 _MAX_ENCOUNTERS_PER_PATIENT = 5
 
@@ -77,7 +91,7 @@ def generate_cohort(
         prac_id = random.choice(prac_ids)
         org_id = random.choice(org_ids)
 
-        # Conditions — primary filter + possible comorbidity (raises on bad filter)
+        # Conditions — primary filter + comorbidity graph (raises on bad filter)
         pt_conditions = generate_conditions_for_patient(
             patient_id=patient["id"],
             practitioner_id=prac_id,
@@ -85,6 +99,12 @@ def generate_cohort(
             condition_filter=condition_filter,
         )
         conditions.extend(pt_conditions)
+
+        # Update the patient's obs_baseline so BP/HR/O2 reflect active conditions.
+        # This must happen before any encounters are generated.
+        obs_baseline = patient.get("obs_baseline")
+        if obs_baseline is not None:
+            update_obs_baseline_for_conditions(obs_baseline, pt_conditions)
 
         # Temporal bound: encounters must happen after the earliest condition was recorded
         earliest_recorded_days_ago = _days_ago_from(
@@ -129,6 +149,19 @@ def generate_cohort(
                     cond["encounter_id"] = enc["id"]
                 first_enc_written = True
 
+            # ServiceRequests first — observation generator needs the SR ids for basedOn
+            enc_srs = generate_service_requests_for_encounter(
+                patient_id=patient["id"],
+                encounter_id=enc["id"],
+                practitioner_id=prac_id,
+                conditions=pt_conditions,
+                authored_on=enc["start_datetime"][:10],
+            )
+            service_requests.extend(enc_srs)
+
+            # Build obs_key → SR.id map for basedOn references
+            sr_basedOn = build_sr_basedOn_map(enc_srs)
+
             # Observations — longitudinally consistent vitals + condition labs
             enc_obs = generate_observations_for_encounter(
                 patient_id=patient["id"],
@@ -136,8 +169,9 @@ def generate_cohort(
                 practitioner_id=prac_id,
                 effective_datetime=enc["start_datetime"],
                 conditions=pt_conditions,
-                obs_baseline=patient.get("obs_baseline"),
+                obs_baseline=obs_baseline,
                 height_cm=patient.get("height_cm"),
+                sr_basedOn=sr_basedOn,
             )
             observations.extend(enc_obs)
 
@@ -160,17 +194,6 @@ def generate_cohort(
                     practitioner_id=prac_id,
                     performed_datetime=enc["start_datetime"],
                     conditions=pt_conditions,
-                )
-            )
-
-            # ServiceRequests — lab/imaging/referral orders for this encounter
-            service_requests.extend(
-                generate_service_requests_for_encounter(
-                    patient_id=patient["id"],
-                    encounter_id=enc["id"],
-                    practitioner_id=prac_id,
-                    conditions=pt_conditions,
-                    authored_on=enc["start_datetime"][:10],
                 )
             )
 

@@ -76,18 +76,28 @@ def _generate_obs_baseline(gender: str, age: int) -> dict:
 
     Values are drawn from the centre of each normal range, then nudged by a
     small random offset so each patient has their own consistent baseline.
+    Weight is derived from a conditional lognormal given height (not independent)
+    so that BMI stays plausible across all encounters.
     """
     # Systolic BP rises slightly with age
     sbp_mid = 100 + min(age * 0.3, 18) + random.uniform(-8, 8)
     dbp_mid = 65 + min(age * 0.15, 10) + random.uniform(-5, 5)
 
-    # Height: males taller on average
+    # Height: sex-stratified normal distribution
     if gender == "male":
         height = random.triangular(160, 195, 177)
     elif gender == "female":
         height = random.triangular(148, 180, 163)
     else:
         height = random.triangular(154, 188, 170)
+
+    height = round(height, 1)
+
+    # Weight derived from height via a BMI drawn from a realistic distribution.
+    # US adult BMI is right-skewed; approximate with triangular(18.5, 50, 27).
+    bmi_target = random.triangular(18.5, 50.0, 27.0)
+    height_m = height / 100.0
+    weight = round(bmi_target * (height_m ** 2), 1)
 
     return {
         "systolic_bp": round(sbp_mid, 0),
@@ -96,7 +106,8 @@ def _generate_obs_baseline(gender: str, age: int) -> dict:
         "respiratory_rate": round(random.triangular(12, 20, 15), 0),
         "body_temperature": round(random.triangular(36.1, 37.2, 36.7), 1),
         "oxygen_saturation": round(random.triangular(96, 100, 98), 0),
-        "height_cm": round(height, 1),
+        "height_cm": height,
+        "weight_kg": weight,
     }
 
 

@@ -76,8 +76,11 @@ class TestR4ObservationMapper:
         seed_all(0)
         raw = _raw()
         from mappers.r4.observation import map_observation
-        # Use a non-BP-panel observation so valueQuantity is present
-        non_panel = next(o for o in raw["observations"] if o["loinc_code"] != "85354-9")
+        # Use a non-BP-panel, non-survey observation so valueQuantity is present
+        non_panel = next(
+            o for o in raw["observations"]
+            if o["loinc_code"] != "85354-9" and o.get("category_code") != "survey"
+        )
         self.resource = map_observation(non_panel)
         # Also map the BP panel for component tests
         bp_panel_raw = next(o for o in raw["observations"] if o["loinc_code"] == "85354-9")

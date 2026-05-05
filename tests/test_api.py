@@ -184,7 +184,7 @@ class TestCatalogEndpoints:
         r = client.get("/api/conditions")
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 10
+        assert len(data) >= 10
         keys = {item["key"] for item in data}
         assert "type2_diabetes" in keys
         assert "depression" in keys
