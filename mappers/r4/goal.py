@@ -1,5 +1,5 @@
 """R4 Goal resource mapper. Spec: https://hl7.org/fhir/R4/goal.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Goal"
 
@@ -13,7 +13,7 @@ _ACHIEVEMENT_CODES: dict[str, tuple[str, str]] = {
 }
 
 
-def map_goal(goal: dict) -> dict:
+def map_goal(goal: dict, us_core: bool = False) -> dict:
     ach_code, ach_display = _ACHIEVEMENT_CODES.get(
         goal.get("achievement_status", "in-progress"),
         ("in-progress", "In Progress"),
@@ -22,7 +22,7 @@ def map_goal(goal: dict) -> dict:
     resource: dict = {
         "resourceType": "Goal",
         "id": goal["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["Goal"] if us_core else _PROFILE),
         "lifecycleStatus": goal["lifecycle_status"],
         "achievementStatus": {
             "coding": [

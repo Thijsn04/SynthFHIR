@@ -8,7 +8,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/CareTeam"
 
 
-def map_care_team(ct: dict) -> dict:
+def map_care_team(ct: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "CareTeam",
         "id": ct["id"],

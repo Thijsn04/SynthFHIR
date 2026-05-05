@@ -24,6 +24,35 @@ def build_meta(profile_url: str) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# US Core R4 profile URLs
+# ---------------------------------------------------------------------------
+_US_CORE = "http://hl7.org/fhir/us/core/StructureDefinition"
+
+US_CORE_PROFILES: dict[str, str] = {
+    "Patient":                        f"{_US_CORE}/us-core-patient",
+    "AllergyIntolerance":             f"{_US_CORE}/us-core-allergyintolerance",
+    "CarePlan":                       f"{_US_CORE}/us-core-careplan",
+    "CareTeam":                       f"{_US_CORE}/us-core-careteam",
+    "Condition-problems":             f"{_US_CORE}/us-core-condition-problems-health-concerns",
+    "Condition-encounter-diagnosis":  f"{_US_CORE}/us-core-condition-encounter-diagnosis",
+    "DiagnosticReport-lab":           f"{_US_CORE}/us-core-diagnosticreport-lab",
+    "DiagnosticReport-note":          f"{_US_CORE}/us-core-diagnosticreport-note",
+    "Encounter":                      f"{_US_CORE}/us-core-encounter",
+    "Goal":                           f"{_US_CORE}/us-core-goal",
+    "Immunization":                   f"{_US_CORE}/us-core-immunization",
+    "Location":                       f"{_US_CORE}/us-core-location",
+    "Medication":                     f"{_US_CORE}/us-core-medication",
+    "MedicationRequest":              f"{_US_CORE}/us-core-medicationrequest",
+    "Observation-lab":                f"{_US_CORE}/us-core-observation-lab",
+    "Observation-vitals":             f"{_US_CORE}/us-core-vital-signs",
+    "Organization":                   f"{_US_CORE}/us-core-organization",
+    "Practitioner":                   f"{_US_CORE}/us-core-practitioner",
+    "PractitionerRole":               f"{_US_CORE}/us-core-practitionerrole",
+    "Procedure":                      f"{_US_CORE}/us-core-procedure",
+}
+
+
 def build_patient_name(patient: dict) -> dict:
     """HumanName — family + given array + optional prefix/suffix."""
     entry: dict = {

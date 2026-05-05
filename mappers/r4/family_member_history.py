@@ -9,7 +9,7 @@ _SEX_CODES: dict[str, tuple[str, str]] = {
 }
 
 
-def map_family_member_history(fmh: dict) -> dict:
+def map_family_member_history(fmh: dict, us_core: bool = False) -> dict:
     sex = fmh.get("sex", "unknown")
     sex_code, sex_display = _SEX_CODES.get(sex, ("unknown", "Unknown"))
 

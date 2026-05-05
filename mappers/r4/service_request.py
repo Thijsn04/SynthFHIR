@@ -4,7 +4,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/ServiceRequest"
 
 
-def map_service_request(sr: dict) -> dict:
+def map_service_request(sr: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "ServiceRequest",
         "id": sr["id"],

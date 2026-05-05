@@ -7,7 +7,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Location"
 
 
-def map_location(loc: dict) -> dict:
+def map_location(loc: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Location",
         "id": loc["id"],

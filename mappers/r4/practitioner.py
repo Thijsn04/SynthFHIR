@@ -1,15 +1,15 @@
 """R4 Practitioner resource mapper. Spec: https://hl7.org/fhir/R4/practitioner.html"""
-from mappers._helpers import build_meta
+from mappers._helpers import US_CORE_PROFILES, build_meta
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Practitioner"
 
 
-def map_practitioner(p: dict) -> dict:
+def map_practitioner(p: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Practitioner",
         "id": p["id"],
-        "meta": build_meta(_PROFILE),
-        # US NPI as the primary identifier
+        "meta": build_meta(US_CORE_PROFILES["Practitioner"] if us_core else _PROFILE),
+        # US Core Practitioner requires identifier:NPI — always present
         "identifier": [{"system": "http://hl7.org/fhir/sid/us-npi", "value": p["npi"]}],
         "active": True,
         "name": [

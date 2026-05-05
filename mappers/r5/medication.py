@@ -10,7 +10,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/MedicationRequest"
 
 
-def map_medication(med: dict) -> dict:
+def map_medication(med: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "MedicationRequest",
         "id": med["id"],

@@ -9,7 +9,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Immunization"
 
 
-def map_immunization(imm: dict) -> dict:
+def map_immunization(imm: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Immunization",
         "id": imm["id"],

@@ -9,7 +9,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/DiagnosticReport"
 
 
-def map_diagnostic_report(report: dict) -> dict:
+def map_diagnostic_report(report: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "DiagnosticReport",
         "id": report["id"],

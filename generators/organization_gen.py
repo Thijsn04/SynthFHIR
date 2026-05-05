@@ -29,6 +29,7 @@ def generate_organization() -> dict:
         "name": f"{city} {fake.last_name()} {suffix}",
         "type_code": type_code,
         "type_display": type_display,
+        "npi": fake.numerify("##########"),
         "phone": e164_phone(),
         "email": fake.company_email(),
         "address_line": fake.street_address(),

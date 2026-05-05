@@ -1,14 +1,14 @@
 """R4 AllergyIntolerance resource mapper. Spec: https://hl7.org/fhir/R4/allergyintolerance.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/AllergyIntolerance"
 
 
-def map_allergy(allergy: dict) -> dict:
+def map_allergy(allergy: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "AllergyIntolerance",
         "id": allergy["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["AllergyIntolerance"] if us_core else _PROFILE),
         "clinicalStatus": {
             "coding": [
                 {

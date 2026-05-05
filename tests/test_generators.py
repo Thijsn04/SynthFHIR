@@ -627,3 +627,152 @@ class TestCohortPhase2Resources:
             if lst["entry_resource_type"] == "Condition":
                 for eid in lst["entry_ids"]:
                     assert eid in cond_ids
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 generators — Temporal Depth
+# ---------------------------------------------------------------------------
+
+class TestYearsParameter:
+    def test_default_years_produces_cohort(self):
+        raw = generate_cohort(count=2, seed=1)
+        assert len(raw["encounters"]) >= 2
+
+    def test_extended_timeline_has_more_encounters(self):
+        raw_2yr = generate_cohort(count=3, seed=5, years=2)
+        raw_5yr = generate_cohort(count=3, seed=5, years=5)
+        assert len(raw_5yr["encounters"]) >= len(raw_2yr["encounters"])
+
+    def test_appointments_present(self):
+        raw = generate_cohort(count=2, seed=42)
+        assert "appointments" in raw
+        assert len(raw["appointments"]) == len(raw["encounters"])
+
+    def test_episodes_of_care_present(self):
+        raw = generate_cohort(count=3, seed=42)
+        assert "episodes_of_care" in raw
+        assert len(raw["episodes_of_care"]) == len(raw["patients"])
+
+    def test_appointment_precedes_encounter(self):
+        from datetime import datetime
+        raw = generate_cohort(count=3, seed=10)
+        enc_by_id = {e["id"]: e for e in raw["encounters"]}
+        for appt in raw["appointments"]:
+            enc = enc_by_id.get(appt["encounter_id"])
+            if enc is None:
+                continue
+            appt_start = datetime.strptime(appt["start"], "%Y-%m-%dT%H:%M:%SZ")
+            enc_start = datetime.strptime(enc["start_datetime"], "%Y-%m-%dT%H:%M:%SZ")
+            assert appt_start <= enc_start, (
+                f"Appointment {appt['start']} is after encounter {enc['start_datetime']}"
+            )
+
+    def test_episode_groups_all_patient_encounters(self):
+        raw = generate_cohort(count=2, seed=42)
+        for eoc in raw["episodes_of_care"]:
+            patient_enc_ids = {e["id"] for e in raw["encounters"] if e["patient_id"] == eoc["patient_id"]}
+            assert set(eoc["encounter_ids"]) == patient_enc_ids
+
+
+class TestAppointmentGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.appointment_gen import generate_appointment
+        enc = {
+            "id": "enc-1", "start_datetime": "2024-06-01T10:00:00Z",
+            "end_datetime": "2024-06-01T10:30:00Z", "reason_codes": [],
+        }
+        appt = generate_appointment(enc, "pat-1", "prac-1", "org-1")
+        for key in ("id", "patient_id", "practitioner_id", "organization_id",
+                    "encounter_id", "status", "start", "end",
+                    "service_type_code", "appointment_type_code"):
+            assert key in appt
+
+    def test_status_is_fulfilled(self):
+        from generators.appointment_gen import generate_appointment
+        enc = {"id": "e", "start_datetime": "2024-01-01T09:00:00Z",
+               "end_datetime": "2024-01-01T09:30:00Z", "reason_codes": []}
+        appt = generate_appointment(enc, "p", "pr", "org")
+        assert appt["status"] == "fulfilled"
+
+    def test_links_to_encounter(self):
+        from generators.appointment_gen import generate_appointment
+        enc = {"id": "enc-xyz", "start_datetime": "2024-03-15T14:00:00Z",
+               "end_datetime": "2024-03-15T14:30:00Z", "reason_codes": []}
+        appt = generate_appointment(enc, "p", "pr", "org")
+        assert appt["encounter_id"] == "enc-xyz"
+
+
+class TestEpisodeOfCareGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.episode_of_care_gen import generate_episode_of_care
+        encs = [
+            {"id": "e1", "patient_id": "p", "start_datetime": "2023-01-01T09:00:00Z",
+             "end_datetime": "2023-01-01T09:30:00Z"},
+            {"id": "e2", "patient_id": "p", "start_datetime": "2023-06-01T09:00:00Z",
+             "end_datetime": "2023-06-01T09:30:00Z"},
+        ]
+        conds = [{"id": "c1", "clinical_status": "active"}]
+        eoc = generate_episode_of_care("p", "org-1", encs, conds)
+        for key in ("id", "patient_id", "organization_id", "status",
+                    "type_code", "period_start", "period_end", "encounter_ids"):
+            assert key in eoc
+
+    def test_period_spans_all_encounters(self):
+        from generators.episode_of_care_gen import generate_episode_of_care
+        encs = [
+            {"id": "e1", "patient_id": "p", "start_datetime": "2022-01-01T09:00:00Z",
+             "end_datetime": "2022-01-01T09:30:00Z"},
+            {"id": "e2", "patient_id": "p", "start_datetime": "2024-12-01T09:00:00Z",
+             "end_datetime": "2024-12-01T09:30:00Z"},
+        ]
+        eoc = generate_episode_of_care("p", "org", encs, [])
+        assert eoc["period_start"] == "2022-01-01"
+        assert eoc["period_end"] == "2024-12-01"
+
+
+class TestLongitudinalLabTrends:
+    def test_hba1c_rises_over_timeline(self):
+        from generators.observation_gen import generate_observations_for_encounter
+        seed_all(99)
+        # T2DM condition that adds hba1c to obs
+        cond = {
+            "clinical_status": "active",
+            "linked_obs_types": ["hba1c"],
+            "snomed_code": "44054006",
+        }
+        baseline = {"hba1c": 7.5, "systolic_bp": 120, "diastolic_bp": 80,
+                    "heart_rate": 72, "respiratory_rate": 14, "body_temperature": 36.7}
+        first_obs = generate_observations_for_encounter(
+            "p", "e1", "pr", "2020-01-01T10:00:00Z", [cond],
+            obs_baseline=baseline, enc_index=0, num_encounters=5, years=4,
+        )
+        last_obs = generate_observations_for_encounter(
+            "p", "e5", "pr", "2024-01-01T10:00:00Z", [cond],
+            obs_baseline=baseline, enc_index=4, num_encounters=5, years=4,
+        )
+        hba1c_first = next((o["value"] for o in first_obs if o["loinc_code"] == "4548-4"), None)
+        hba1c_last = next((o["value"] for o in last_obs if o["loinc_code"] == "4548-4"), None)
+        if hba1c_first is not None and hba1c_last is not None:
+            assert hba1c_last > hba1c_first, "HbA1c should rise over a 4-year timeline"
+
+    def test_obs_baseline_not_mutated(self):
+        from generators.observation_gen import generate_observations_for_encounter
+        cond = {
+            "clinical_status": "active",
+            "linked_obs_types": ["hba1c"],
+            "snomed_code": "44054006",
+        }
+        baseline = {"hba1c": 7.5, "systolic_bp": 120, "diastolic_bp": 80,
+                    "heart_rate": 72, "respiratory_rate": 14, "body_temperature": 36.7}
+        original_hba1c = baseline["hba1c"]
+        generate_observations_for_encounter(
+            "p", "e", "pr", "2024-01-01T10:00:00Z", [cond],
+            obs_baseline=baseline, enc_index=2, num_encounters=5, years=4,
+        )
+        assert baseline["hba1c"] == original_hba1c, "obs_baseline must not be mutated"

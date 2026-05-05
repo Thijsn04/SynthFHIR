@@ -7,7 +7,7 @@ from mappers._helpers import build_meta, ref, utcnow
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/List"
 
 
-def map_list(lst: dict) -> dict:
+def map_list(lst: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "List",
         "id": lst["id"],

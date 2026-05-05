@@ -10,7 +10,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Condition"
 
 
-def map_condition(cond: dict) -> dict:
+def map_condition(cond: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Condition",
         "id": cond["id"],

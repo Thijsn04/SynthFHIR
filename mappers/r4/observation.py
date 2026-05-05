@@ -1,14 +1,29 @@
-"""R4 Observation resource mapper. Spec: https://hl7.org/fhir/R4/observation.html"""
-from mappers._helpers import build_meta, ref
+"""R4 Observation resource mapper. Spec: https://hl7.org/fhir/R4/observation.html
+
+US Core profiles:
+  category=laboratory  → us-core-observation-lab
+  category=vital-signs → us-core-vital-signs
+"""
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Observation"
 
 
-def map_observation(obs: dict) -> dict:
+def _us_core_profile(category_code: str) -> str:
+    if category_code == "laboratory":
+        return US_CORE_PROFILES["Observation-lab"]
+    if category_code == "vital-signs":
+        return US_CORE_PROFILES["Observation-vitals"]
+    return _PROFILE
+
+
+def map_observation(obs: dict, us_core: bool = False) -> dict:
+    profile = _us_core_profile(obs.get("category_code", "")) if us_core else _PROFILE
+
     resource: dict = {
         "resourceType": "Observation",
         "id": obs["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(profile),
         "status": obs["status"],
         "category": [
             {

@@ -1,14 +1,14 @@
 """R4 Location resource mapper. Spec: https://hl7.org/fhir/R4/location.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Location"
 
 
-def map_location(loc: dict) -> dict:
+def map_location(loc: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Location",
         "id": loc["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["Location"] if us_core else _PROFILE),
         "status": loc["status"],
         "name": loc["name"],
         "type": [

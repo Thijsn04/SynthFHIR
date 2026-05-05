@@ -4,7 +4,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Coverage"
 
 
-def map_coverage(cov: dict) -> dict:
+def map_coverage(cov: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Coverage",
         "id": cov["id"],

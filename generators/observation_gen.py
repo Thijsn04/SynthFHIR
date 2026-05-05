@@ -84,6 +84,29 @@ def update_obs_baseline_for_conditions(obs_baseline: dict, conditions: list[dict
     # (weight_kg was derived from BMI target in patient_gen)
 
 
+# Per-year longitudinal drift applied to personal midpoints.
+# Positive = value rises over time; negative = value falls.
+# Keyed by condition_key → {obs_key: drift_per_year}
+_CONDITION_LAB_DRIFT: dict[str, dict[str, float]] = {
+    # T2DM without intensification: HbA1c climbs ~0.4%/yr, creatinine rises slightly
+    "type2_diabetes":  {"hba1c": 0.40, "creatinine": 0.04},
+    # CKD: eGFR declines ~0.89 mL/min/yr on average
+    "ckd":             {"egfr": -0.89, "creatinine": 0.08},
+    # Hypertension: SBP creeps up ~2 mmHg/yr without intensification
+    "hypertension":    {"systolic_bp": 2.0, "diastolic_bp": 1.0},
+    # Hyperlipidemia: LDL rises ~3 mg/dL/yr without statin
+    "hyperlipidemia":  {"ldl_cholesterol": 3.0},
+}
+
+# Map condition SNOMED code → condition_key (for drift lookup)
+_SNOMED_TO_COND_KEY: dict[str, str] = {
+    "44054006":  "type2_diabetes",
+    "38341003":  "hypertension",
+    "55822004":  "hyperlipidemia",
+    "709044004": "ckd",
+}
+
+
 def generate_observations_for_encounter(
     patient_id: str,
     encounter_id: str,
@@ -93,6 +116,9 @@ def generate_observations_for_encounter(
     obs_baseline: dict | None = None,
     height_cm: float | None = None,
     sr_basedOn: dict[str, str] | None = None,
+    enc_index: int = 0,
+    num_encounters: int = 1,
+    years: int = 2,
 ) -> list[dict]:
     """Generates observations for a single encounter.
 
@@ -102,16 +128,39 @@ def generate_observations_for_encounter(
     Height is always recorded; weight uses the stable baseline with small jitter;
     BMI is derived from weight and height.
 
+    enc_index / num_encounters / years: used to compute longitudinal drift —
+    lab values drift realistically across the patient timeline (e.g. HbA1c
+    rises without treatment intensification, eGFR declines in CKD).
+
     sr_basedOn: maps obs_key → ServiceRequest.id for the basedOn reference.
     """
+    # Fraction through the patient's timeline (0.0 = first encounter, 1.0 = last)
+    timeline_frac = enc_index / max(1, num_encounters - 1) if num_encounters > 1 else 0.0
+    years_elapsed = timeline_frac * years
     obs_keys: set[str] = set(_BASELINE_OBS) | {"height"}
 
     active_condition_obs: set[str] = set()
+    active_cond_keys: set[str] = set()
     for cond in conditions:
         if cond.get("clinical_status") == "active":
             keys = cond.get("linked_obs_types", [])
             obs_keys.update(keys)
             active_condition_obs.update(keys)
+            ck = _SNOMED_TO_COND_KEY.get(cond.get("snomed_code", ""))
+            if ck:
+                active_cond_keys.add(ck)
+
+    # Build a drifted baseline for this specific encounter position.
+    # We do NOT mutate obs_baseline in-place — drift is always relative to the
+    # original patient baseline so values don't compound across encounters.
+    if obs_baseline is not None and years_elapsed > 0:
+        eff_baseline: dict = dict(obs_baseline)
+        for cond_key in active_cond_keys:
+            for obs_key, drift_per_year in _CONDITION_LAB_DRIFT.get(cond_key, {}).items():
+                if obs_key in eff_baseline:
+                    eff_baseline[obs_key] = eff_baseline[obs_key] + drift_per_year * years_elapsed
+    else:
+        eff_baseline = obs_baseline  # type: ignore[assignment]
 
     # BP panel replaces separate systolic/diastolic observations.
     bp_abnormal = "systolic_bp" in active_condition_obs or "diastolic_bp" in active_condition_obs
@@ -125,7 +174,7 @@ def generate_observations_for_encounter(
     result.append(_make_bp_panel(
         patient_id, encounter_id, practitioner_id, effective_datetime,
         is_abnormal=bp_abnormal,
-        obs_baseline=obs_baseline,
+        obs_baseline=eff_baseline,
     ))
 
     for key in obs_keys:
@@ -147,7 +196,7 @@ def generate_observations_for_encounter(
         if key == "body_weight":
             obs, weight_kg = _make_weight(
                 patient_id, encounter_id, practitioner_id,
-                effective_datetime, obs_def, obs_baseline, sr_id=sr_id,
+                effective_datetime, obs_def, eff_baseline, sr_id=sr_id,
             )
             result.append(obs)
             continue
@@ -156,7 +205,7 @@ def generate_observations_for_encounter(
         if key == "bmi":
             continue
 
-        personal_mid = obs_baseline.get(key) if obs_baseline else None
+        personal_mid = eff_baseline.get(key) if eff_baseline else None
         obs = _make(patient_id, encounter_id, practitioner_id, effective_datetime,
                     obs_def, is_abnormal, personal_mid, sr_id=sr_id)
         result.append(obs)

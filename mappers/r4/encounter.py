@@ -1,14 +1,14 @@
 """R4 Encounter resource mapper. Spec: https://hl7.org/fhir/R4/encounter.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Encounter"
 
 
-def map_encounter(enc: dict) -> dict:
+def map_encounter(enc: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "Encounter",
         "id": enc["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["Encounter"] if us_core else _PROFILE),
         "status": enc["status"],
         # R4: Encounter.class is a single Coding (not a CodeableConcept array)
         "class": {
@@ -39,6 +39,16 @@ def map_encounter(enc: dict) -> dict:
         "serviceProvider": ref("Organization", enc["organization_id"]),
     }
 
+    # US Core Encounter requires at least one identifier
+    if us_core:
+        resource["identifier"] = [
+            {
+                "use": "usual",
+                "system": "urn:synthfhir:encounter",
+                "value": enc["id"],
+            }
+        ]
+
     if enc.get("reason_codes"):
         resource["reasonCode"] = [
             {
@@ -58,5 +68,19 @@ def map_encounter(enc: dict) -> dict:
         resource["location"] = [
             {"location": ref("Location", enc["location_id"]), "status": "completed"}
         ]
+
+    # US Core Encounter: add hospitalization for inpatient encounters
+    if us_core and enc.get("class_code") == "IMP":
+        resource["hospitalization"] = {
+            "dischargeDisposition": {
+                "coding": [
+                    {
+                        "system": "http://terminology.hl7.org/CodeSystem/ex-dischargestatus",
+                        "code": "home",
+                        "display": "Home",
+                    }
+                ]
+            }
+        }
 
     return resource

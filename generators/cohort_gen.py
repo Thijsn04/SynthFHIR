@@ -28,12 +28,21 @@ Phase 2 additions:
 - FamilyMemberHistory: per patient; hereditary conditions.
 - Consent: per patient; HIPAA + optional research consent.
 - Provenance: per patient; audit trail covering conditions, encounters, meds.
+
+Phase 4 additions:
+- Configurable years parameter scales encounter count and time window.
+- Longitudinal lab trends: HbA1c/eGFR/BP drift over the patient timeline.
+- Medication escalation: 35% chance of adding a second-line agent mid-timeline
+  for long (≥3 year) patients with T2DM or hypertension.
+- Appointment: one per encounter, scheduled 0-2 days before the encounter.
+- EpisodeOfCare: one per patient, grouping all encounters.
 """
 import random
 from datetime import date, datetime
 
 from generators._rng import seed_all
 from generators.allergy_gen import generate_allergies_for_patient
+from generators.appointment_gen import generate_appointment
 from generators.care_plan_gen import generate_care_plan
 from generators.care_team_gen import generate_care_team
 from generators.condition_gen import generate_conditions_for_patient
@@ -41,6 +50,7 @@ from generators.consent_gen import generate_consents_for_patient
 from generators.coverage_gen import generate_coverage_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
 from generators.encounter_gen import generate_encounter
+from generators.episode_of_care_gen import generate_episode_of_care
 from generators.family_member_history_gen import generate_family_member_history
 from generators.goal_gen import generate_goals_for_patient
 from generators.immunization_gen import generate_immunizations_for_patient
@@ -63,7 +73,8 @@ from generators.service_request_gen import (
     generate_service_requests_for_encounter,
 )
 
-_MAX_ENCOUNTERS_PER_PATIENT = 5
+_BASE_ENC_PER_YEAR = 2   # baseline encounter rate per patient-year
+_MAX_ENC_CAP = 20        # hard ceiling regardless of years
 
 
 def generate_cohort(
@@ -74,6 +85,7 @@ def generate_cohort(
     seed: int | None = None,
     num_practitioners: int = 3,
     num_organizations: int = 1,
+    years: int = 2,
 ) -> dict:
     """Returns a dict of raw lists keyed by resource type, ready for mapping.
 
@@ -117,6 +129,8 @@ def generate_cohort(
     care_plans: list[dict] = []
     goals: list[dict] = []
     encounters: list[dict] = []
+    appointments: list[dict] = []
+    episodes_of_care: list[dict] = []
     observations: list[dict] = []
     diagnostic_reports: list[dict] = []
     medications: list[dict] = []
@@ -152,7 +166,7 @@ def generate_cohort(
         earliest_recorded_days_ago = _days_ago_from(
             min(c["recorded_date"] for c in pt_conditions)
         )
-        enc_window = min(730, max(30, earliest_recorded_days_ago - 1))
+        enc_window = min(years * 365, max(30, earliest_recorded_days_ago - 1))
 
         # Allergies — probabilistic
         pt_allergies = generate_allergies_for_patient(patient["id"], prac_id)
@@ -187,8 +201,10 @@ def generate_cohort(
         pt_goals = generate_goals_for_patient(patient["id"], care_plan["id"], pt_conditions)
         goals.extend(pt_goals)
 
-        # Encounters spread evenly across the post-diagnosis window
-        num_enc = min(max(1, len(pt_conditions) * 2), _MAX_ENCOUNTERS_PER_PATIENT)
+        # Encounters spread evenly across the post-diagnosis window.
+        # Scale with years: ~2 per year, bounded by _MAX_ENC_CAP.
+        max_enc = min(max(2, years * _BASE_ENC_PER_YEAR), _MAX_ENC_CAP)
+        num_enc = min(max(1, len(pt_conditions) * 2), max_enc)
         window_per_enc = enc_window // num_enc
 
         # Pick location IDs for this org
@@ -210,6 +226,15 @@ def generate_cohort(
             )
             encounters.append(enc)
             pt_encounters.append(enc)
+
+            # Appointment — scheduled 0-2 days before this encounter
+            appointments.append(generate_appointment(
+                encounter=enc,
+                patient_id=patient["id"],
+                practitioner_id=prac_id,
+                organization_id=org_id,
+                location_id=loc_id,
+            ))
 
             # Link all conditions to the first encounter (diagnosis visit)
             if not first_enc_written:
@@ -238,6 +263,9 @@ def generate_cohort(
                 obs_baseline=obs_baseline,
                 height_cm=patient.get("height_cm"),
                 sr_basedOn=sr_basedOn,
+                enc_index=enc_idx,
+                num_encounters=num_enc,
+                years=years,
             )
             observations.extend(enc_obs)
 
@@ -261,7 +289,15 @@ def generate_cohort(
                 )
             )
 
-        # MedicationRequests — one set per patient (linked to first encounter)
+        # EpisodeOfCare — one per patient grouping all encounters
+        episodes_of_care.append(generate_episode_of_care(
+            patient_id=patient["id"],
+            organization_id=org_id,
+            encounters=pt_encounters,
+            conditions=pt_conditions,
+        ))
+
+        # MedicationRequests — initial set at first encounter, potential escalation mid-timeline
         first_enc_id = pt_encounters[0]["id"] if pt_encounters else ""
         pt_meds = generate_medications_for_patient(
             patient_id=patient["id"],
@@ -269,6 +305,24 @@ def generate_cohort(
             encounter_id=first_enc_id,
             conditions=pt_conditions,
         )
+
+        # Medication escalation: for long timelines, 35% chance of adding a second-
+        # line agent mid-timeline for T2DM or hypertension (reflecting treatment inertia).
+        if years >= 3 and len(pt_encounters) >= 3 and random.random() < 0.35:
+            mid_enc = pt_encounters[len(pt_encounters) // 2]
+            escalation_meds = generate_medications_for_patient(
+                patient_id=patient["id"],
+                practitioner_id=prac_id,
+                encounter_id=mid_enc["id"],
+                conditions=pt_conditions,
+            )
+            # Only keep escalation meds not already prescribed (different rxnorm_code)
+            existing_rx = {m["rxnorm_code"] for m in pt_meds}
+            for med in escalation_meds:
+                if med["rxnorm_code"] not in existing_rx:
+                    pt_meds.append(med)
+                    existing_rx.add(med["rxnorm_code"])
+
         medications.extend(pt_meds)
 
         # Lists — aggregate conditions, medications, allergies
@@ -315,6 +369,8 @@ def generate_cohort(
         "care_plans": care_plans,
         "goals": goals,
         "encounters": encounters,
+        "appointments": appointments,
+        "episodes_of_care": episodes_of_care,
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
         "medications": medications,

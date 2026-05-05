@@ -1,14 +1,28 @@
-"""R4 Condition resource mapper. Spec: https://hl7.org/fhir/R4/condition.html"""
-from mappers._helpers import build_meta, ref
+"""R4 Condition resource mapper. Spec: https://hl7.org/fhir/R4/condition.html
+
+US Core: two profiles depending on category —
+  problem-list-item   → us-core-condition-problems-health-concerns
+  encounter-diagnosis → us-core-condition-encounter-diagnosis
+"""
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Condition"
 
 
-def map_condition(cond: dict) -> dict:
+def map_condition(cond: dict, us_core: bool = False) -> dict:
+    if us_core:
+        cat = cond.get("category_code", "problem-list-item")
+        if cat == "encounter-diagnosis":
+            profile = US_CORE_PROFILES["Condition-encounter-diagnosis"]
+        else:
+            profile = US_CORE_PROFILES["Condition-problems"]
+    else:
+        profile = _PROFILE
+
     return {
         "resourceType": "Condition",
         "id": cond["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(profile),
         "clinicalStatus": {
             "coding": [
                 {

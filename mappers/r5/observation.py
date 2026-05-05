@@ -7,7 +7,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Observation"
 
 
-def map_observation(obs: dict) -> dict:
+def map_observation(obs: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "Observation",
         "id": obs["id"],

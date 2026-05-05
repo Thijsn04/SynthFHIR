@@ -16,7 +16,7 @@ _KIND_MAP = {
 }
 
 
-def map_coverage(cov: dict) -> dict:
+def map_coverage(cov: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Coverage",
         "id": cov["id"],

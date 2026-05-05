@@ -10,7 +10,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Consent"
 
 
-def map_consent(consent: dict) -> dict:
+def map_consent(consent: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Consent",
         "id": consent["id"],

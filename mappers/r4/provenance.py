@@ -4,7 +4,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Provenance"
 
 
-def map_provenance(prov: dict) -> dict:
+def map_provenance(prov: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Provenance",
         "id": prov["id"],

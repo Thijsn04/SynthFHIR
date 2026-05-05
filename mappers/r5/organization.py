@@ -7,7 +7,7 @@ from mappers._helpers import build_meta
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Organization"
 
 
-def map_organization(org: dict) -> dict:
+def map_organization(org: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Organization",
         "id": org["id"],

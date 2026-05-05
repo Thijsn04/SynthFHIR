@@ -212,3 +212,118 @@ class TestCatalogEndpoints:
         for item in data:
             assert "normal_range" in item
             assert "abnormal_range" in item
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — /api/metadata CapabilityStatement
+# ---------------------------------------------------------------------------
+
+class TestMetadataEndpoint:
+    def test_returns_capability_statement(self):
+        r = client.get("/api/metadata")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["resourceType"] == "CapabilityStatement"
+
+    def test_fhir_version_r4(self):
+        r = client.get("/api/metadata", params={"version": "R4"})
+        assert r.json()["fhirVersion"] == "4.0.1"
+
+    def test_fhir_version_r5(self):
+        r = client.get("/api/metadata", params={"version": "R5"})
+        assert r.json()["fhirVersion"] == "5.0.0"
+
+    def test_resource_types_listed(self):
+        r = client.get("/api/metadata")
+        body = r.json()
+        resource_types = {res["type"] for res in body["rest"][0]["resource"]}
+        assert "Patient" in resource_types
+        assert "Observation" in resource_types
+        assert "MedicationRequest" in resource_types
+
+    def test_us_core_profiles_in_r4(self):
+        r = client.get("/api/metadata", params={"version": "R4"})
+        body = r.json()
+        resources = {res["type"]: res for res in body["rest"][0]["resource"]}
+        patient_profiles = resources["Patient"].get("supportedProfile", [])
+        assert any("us-core-patient" in p for p in patient_profiles)
+
+    def test_us_core_cohort_profile_flag(self):
+        r = client.get("/api/generate/cohort", params={
+            "count": 1, "seed": 1, "profile": "us-core",
+        })
+        assert r.status_code == 200
+        body = r.json()
+        patient_entries = [e for e in body["entry"] if e["resource"]["resourceType"] == "Patient"]
+        assert len(patient_entries) >= 1
+        profile = patient_entries[0]["resource"]["meta"]["profile"][0]
+        assert "us-core-patient" in profile
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Temporal Depth
+# ---------------------------------------------------------------------------
+
+class TestYearsParameter:
+    def test_years_param_accepted(self):
+        r = client.get("/api/generate/cohort", params={"count": 2, "seed": 1, "years": 5})
+        assert r.status_code == 200
+
+    def test_years_out_of_range_returns_422(self):
+        r = client.get("/api/generate/cohort", params={"count": 1, "years": 25})
+        assert r.status_code == 422
+
+    def test_years_below_min_returns_422(self):
+        r = client.get("/api/generate/cohort", params={"count": 1, "years": 0})
+        assert r.status_code == 422
+
+    def test_longer_timeline_produces_more_entries(self):
+        r2 = client.get("/api/generate/cohort", params={"count": 3, "seed": 5, "years": 2})
+        r8 = client.get("/api/generate/cohort", params={"count": 3, "seed": 5, "years": 8})
+        assert r8.json()["total"] >= r2.json()["total"]
+
+    def test_appointments_in_bundle(self):
+        r = client.get("/api/generate/cohort", params={"count": 2, "seed": 1})
+        body = r.json()
+        appt_entries = [e for e in body["entry"] if e["resource"]["resourceType"] == "Appointment"]
+        assert len(appt_entries) >= 2
+
+    def test_episodes_of_care_in_bundle(self):
+        r = client.get("/api/generate/cohort", params={"count": 2, "seed": 1})
+        body = r.json()
+        eoc_entries = [e for e in body["entry"] if e["resource"]["resourceType"] == "EpisodeOfCare"]
+        assert len(eoc_entries) == 2
+
+    def test_appointment_resource_structure(self):
+        r = client.get("/api/generate/cohort", params={"count": 1, "seed": 42})
+        body = r.json()
+        appts = [e["resource"] for e in body["entry"] if e["resource"]["resourceType"] == "Appointment"]
+        assert len(appts) >= 1
+        appt = appts[0]
+        assert appt["status"] == "fulfilled"
+        assert "participant" in appt
+        assert "serviceType" in appt
+
+    def test_episode_of_care_resource_structure(self):
+        r = client.get("/api/generate/cohort", params={"count": 1, "seed": 42})
+        body = r.json()
+        eocs = [e["resource"] for e in body["entry"] if e["resource"]["resourceType"] == "EpisodeOfCare"]
+        assert len(eocs) == 1
+        eoc = eocs[0]
+        assert eoc["status"] == "active"
+        assert "patient" in eoc
+        assert "period" in eoc
+
+    def test_r5_appointment_subject_field(self):
+        r = client.get("/api/generate/cohort", params={"count": 1, "seed": 1, "version": "R5"})
+        body = r.json()
+        appts = [e["resource"] for e in body["entry"] if e["resource"]["resourceType"] == "Appointment"]
+        assert len(appts) >= 1
+        assert "subject" in appts[0]
+
+    def test_capability_statement_includes_new_resources(self):
+        r = client.get("/api/metadata")
+        body = r.json()
+        resource_types = {res["type"] for res in body["rest"][0]["resource"]}
+        assert "Appointment" in resource_types
+        assert "EpisodeOfCare" in resource_types

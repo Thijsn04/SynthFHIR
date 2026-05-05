@@ -7,7 +7,7 @@ from mappers._helpers import build_meta, ref
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/RelatedPerson"
 
 
-def map_related_person(rp: dict) -> dict:
+def map_related_person(rp: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "RelatedPerson",
         "id": rp["id"],

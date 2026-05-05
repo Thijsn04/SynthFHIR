@@ -16,7 +16,7 @@ _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Encounter"
 _STATUS_MAP = {"finished": "completed"}
 
 
-def map_encounter(enc: dict) -> dict:
+def map_encounter(enc: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "Encounter",
         "id": enc["id"],

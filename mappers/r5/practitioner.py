@@ -7,7 +7,7 @@ from mappers._helpers import build_meta
 _PROFILE = "http://hl7.org/fhir/5.0/StructureDefinition/Practitioner"
 
 
-def map_practitioner(p: dict) -> dict:
+def map_practitioner(p: dict, us_core: bool = False) -> dict:
     return {
         "resourceType": "Practitioner",
         "id": p["id"],

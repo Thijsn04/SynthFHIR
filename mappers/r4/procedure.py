@@ -1,14 +1,14 @@
 """R4 Procedure resource mapper. Spec: https://hl7.org/fhir/R4/procedure.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Procedure"
 
 
-def map_procedure(proc: dict) -> dict:
+def map_procedure(proc: dict, us_core: bool = False) -> dict:
     resource: dict = {
         "resourceType": "Procedure",
         "id": proc["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["Procedure"] if us_core else _PROFILE),
         "status": proc["status"],
         "category": {
             "coding": [

@@ -1,14 +1,14 @@
 """R4 MedicationRequest resource mapper. Spec: https://hl7.org/fhir/R4/medicationrequest.html"""
-from mappers._helpers import build_meta, ref
+from mappers._helpers import US_CORE_PROFILES, build_meta, ref
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/MedicationRequest"
 
 
-def map_medication(med: dict) -> dict:
-    return {
+def map_medication(med: dict, us_core: bool = False) -> dict:
+    resource: dict = {
         "resourceType": "MedicationRequest",
         "id": med["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["MedicationRequest"] if us_core else _PROFILE),
         "status": med["status"],
         "intent": med["intent"],
         "medicationCodeableConcept": {
@@ -77,3 +77,9 @@ def map_medication(med: dict) -> dict:
             },
         },
     }
+
+    # US Core MedicationRequest requires reported[x]
+    if us_core:
+        resource["reportedBoolean"] = False
+
+    return resource

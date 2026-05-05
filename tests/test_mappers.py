@@ -482,3 +482,330 @@ class TestR5CarePlanActivities:
             for act in r["activity"]:
                 assert "plannedActivityDetail" in act
                 assert "detail" not in act
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — US Core conformance tests
+# ---------------------------------------------------------------------------
+
+_US_CORE_BASE = "http://hl7.org/fhir/us/core/StructureDefinition"
+
+
+class TestUSCoreCondition:
+    def setup_method(self):
+        seed_all(0)
+        self.raw = _raw(count=5)
+
+    def test_problem_list_profile(self):
+        from mappers.r4.condition import map_condition
+        cond = next(
+            c for c in self.raw["conditions"]
+            if c["category_code"] == "problem-list-item"
+        )
+        r = map_condition(cond, us_core=True)
+        assert "us-core-condition-problems-health-concerns" in r["meta"]["profile"][0]
+
+    def test_encounter_diagnosis_profile(self):
+        from mappers.r4.condition import map_condition
+        cond = next(
+            (c for c in self.raw["conditions"] if c["category_code"] == "encounter-diagnosis"),
+            None,
+        )
+        if cond is None:
+            pytest.skip("No encounter-diagnosis condition generated with this seed")
+        r = map_condition(cond, us_core=True)
+        assert "us-core-condition-encounter-diagnosis" in r["meta"]["profile"][0]
+
+    def test_base_profile_unchanged(self):
+        from mappers.r4.condition import map_condition
+        r = map_condition(self.raw["conditions"][0], us_core=False)
+        assert r["meta"]["profile"][0] == "http://hl7.org/fhir/StructureDefinition/Condition"
+
+
+class TestUSCoreAllergy:
+    def test_us_core_profile(self):
+        seed_all(0)
+        raw = _raw()
+        from mappers.r4.allergy import map_allergy
+        r = map_allergy(raw["allergies"][0], us_core=True)
+        assert f"{_US_CORE_BASE}/us-core-allergyintolerance" == r["meta"]["profile"][0]
+
+
+class TestUSCoreEncounter:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw()
+        from mappers.r4.encounter import map_encounter
+        self.resource = map_encounter(raw["encounters"][0], us_core=True)
+
+    def test_us_core_profile(self):
+        assert f"{_US_CORE_BASE}/us-core-encounter" == self.resource["meta"]["profile"][0]
+
+    def test_identifier_present(self):
+        assert "identifier" in self.resource
+        assert len(self.resource["identifier"]) >= 1
+        assert self.resource["identifier"][0]["value"]
+
+
+class TestUSCoreObservation:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=5)
+        from mappers.r4.observation import map_observation
+        self.lab_obs = next(
+            (o for o in raw["observations"] if o.get("category_code") == "laboratory"), None
+        )
+        self.vital_obs = next(
+            (o for o in raw["observations"] if o.get("category_code") == "vital-signs"), None
+        )
+
+    def test_lab_us_core_profile(self):
+        if self.lab_obs is None:
+            pytest.skip("No laboratory observation generated")
+        from mappers.r4.observation import map_observation
+        r = map_observation(self.lab_obs, us_core=True)
+        assert f"{_US_CORE_BASE}/us-core-observation-lab" == r["meta"]["profile"][0]
+
+    def test_vitals_us_core_profile(self):
+        if self.vital_obs is None:
+            pytest.skip("No vital-signs observation generated")
+        from mappers.r4.observation import map_observation
+        r = map_observation(self.vital_obs, us_core=True)
+        assert f"{_US_CORE_BASE}/us-core-vital-signs" == r["meta"]["profile"][0]
+
+
+class TestUSCoreDiagnosticReport:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=5)
+        from mappers.r4.diagnostic_report import map_diagnostic_report
+        reports = raw.get("diagnostic_reports", [])
+        self.resource = map_diagnostic_report(reports[0], us_core=True) if reports else None
+
+    def test_us_core_profile(self):
+        if self.resource is None:
+            pytest.skip("No diagnostic reports generated")
+        assert f"{_US_CORE_BASE}/us-core-diagnosticreport-lab" == self.resource["meta"]["profile"][0]
+
+    def test_lab_category_present(self):
+        if self.resource is None:
+            pytest.skip("No diagnostic reports generated")
+        all_codes = [
+            coding["code"]
+            for cat in self.resource["category"]
+            for coding in cat["coding"]
+        ]
+        assert "LAB" in all_codes
+
+
+class TestUSCoreMedicationRequest:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=5)
+        from mappers.r4.medication import map_medication
+        meds = raw.get("medications", [])
+        self.resource = map_medication(meds[0], us_core=True) if meds else None
+
+    def test_us_core_profile(self):
+        if self.resource is None:
+            pytest.skip("No medications generated")
+        assert f"{_US_CORE_BASE}/us-core-medicationrequest" == self.resource["meta"]["profile"][0]
+
+    def test_reported_boolean_present(self):
+        if self.resource is None:
+            pytest.skip("No medications generated")
+        assert "reportedBoolean" in self.resource
+        assert self.resource["reportedBoolean"] is False
+
+
+class TestUSCorePractitionerRole:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw()
+        from mappers.r4.practitioner_role import map_practitioner_role
+        self.resource = map_practitioner_role(raw["practitioner_roles"][0], us_core=True)
+
+    def test_us_core_profile(self):
+        assert f"{_US_CORE_BASE}/us-core-practitionerrole" == self.resource["meta"]["profile"][0]
+
+    def test_nucc_specialty_added(self):
+        codings = self.resource["specialty"][0]["coding"]
+        systems = {c["system"] for c in codings}
+        assert "http://nucc.org/provider-taxonomy" in systems
+
+
+class TestUSCoreCarePlan:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.care_plan import map_care_plan
+        self.resource = map_care_plan(raw["care_plans"][0], us_core=True)
+
+    def test_us_core_profile(self):
+        assert f"{_US_CORE_BASE}/us-core-careplan" == self.resource["meta"]["profile"][0]
+
+    def test_category_assess_plan(self):
+        cats = self.resource["category"]
+        codes = [c["code"] for cat in cats for c in cat["coding"]]
+        assert "assess-plan" in codes
+
+    def test_narrative_text_present(self):
+        assert "text" in self.resource
+        assert self.resource["text"]["status"] == "generated"
+        assert "<div" in self.resource["text"]["div"]
+
+
+class TestUSCoreOrganization:
+    def test_us_core_profile_and_npi(self):
+        seed_all(0)
+        raw = _raw()
+        from mappers.r4.organization import map_organization
+        r = map_organization(raw["organizations"][0], us_core=True)
+        assert f"{_US_CORE_BASE}/us-core-organization" == r["meta"]["profile"][0]
+        assert "identifier" in r
+        assert any(
+            i["system"] == "http://hl7.org/fhir/sid/us-npi"
+            for i in r["identifier"]
+        )
+
+
+class TestUSCorePractitioner:
+    def test_us_core_profile_and_npi(self):
+        seed_all(0)
+        raw = _raw()
+        from mappers.r4.practitioner import map_practitioner
+        r = map_practitioner(raw["practitioners"][0], us_core=True)
+        assert f"{_US_CORE_BASE}/us-core-practitioner" == r["meta"]["profile"][0]
+        assert any(
+            i["system"] == "http://hl7.org/fhir/sid/us-npi"
+            for i in r["identifier"]
+        )
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 mappers — Appointment and EpisodeOfCare
+# ---------------------------------------------------------------------------
+
+class TestR4AppointmentMapper:
+    def setup_method(self):
+        seed_all(0)
+        self.raw = _raw(count=3)
+        from mappers.r4.appointment import map_appointment
+        self.appt = self.raw["appointments"][0]
+        self.resource = map_appointment(self.appt)
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "Appointment"
+
+    def test_required_fields(self):
+        assert "status" in self.resource
+        assert "participant" in self.resource
+        assert len(self.resource["participant"]) >= 2
+
+    def test_status_fulfilled(self):
+        assert self.resource["status"] == "fulfilled"
+
+    def test_patient_participant(self):
+        # References use urn:uuid: format — check by matching patient_id
+        patient_id = self.appt["patient_id"]
+        actor_refs = [p["actor"]["reference"] for p in self.resource["participant"]]
+        assert any(patient_id in r for r in actor_refs)
+
+    def test_practitioner_participant(self):
+        prac_id = self.appt["practitioner_id"]
+        actor_refs = [p["actor"]["reference"] for p in self.resource["participant"]]
+        assert any(prac_id in r for r in actor_refs)
+
+    def test_service_type_present(self):
+        assert "serviceType" in self.resource
+        assert self.resource["serviceType"][0]["coding"][0]["system"] == "http://snomed.info/sct"
+
+    def test_start_before_end(self):
+        from datetime import datetime
+        start = datetime.strptime(self.resource["start"], "%Y-%m-%dT%H:%M:%SZ")
+        end = datetime.strptime(self.resource["end"], "%Y-%m-%dT%H:%M:%SZ")
+        assert start < end
+
+    def test_us_core_param_accepted(self):
+        from mappers.r4.appointment import map_appointment
+        r = map_appointment(self.appt, us_core=True)
+        assert r["resourceType"] == "Appointment"
+
+
+class TestR5AppointmentMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r5.appointment import map_appointment
+        self.resource = map_appointment(raw["appointments"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "Appointment"
+
+    def test_r5_subject_field(self):
+        assert "subject" in self.resource
+        # References use urn:uuid: format
+        assert "urn:uuid:" in self.resource["subject"]["reference"]
+
+    def test_r5_service_type_uses_concept(self):
+        svc = self.resource["serviceType"][0]
+        assert "concept" in svc
+        assert "coding" in svc["concept"]
+
+
+class TestR4EpisodeOfCareMapper:
+    def setup_method(self):
+        seed_all(0)
+        self.raw = _raw(count=3)
+        from mappers.r4.episode_of_care import map_episode_of_care
+        self.eoc = self.raw["episodes_of_care"][0]
+        self.resource = map_episode_of_care(self.eoc)
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "EpisodeOfCare"
+
+    def test_required_fields(self):
+        assert "status" in self.resource
+        assert "patient" in self.resource
+
+    def test_patient_reference(self):
+        # References use urn:uuid: format — check by ID
+        assert self.eoc["patient_id"] in self.resource["patient"]["reference"]
+
+    def test_managing_organization(self):
+        assert self.eoc["organization_id"] in self.resource["managingOrganization"]["reference"]
+
+    def test_period_present(self):
+        assert "period" in self.resource
+        assert "start" in self.resource["period"]
+
+    def test_diagnosis_links_conditions(self):
+        if self.eoc.get("condition_ids"):
+            assert "diagnosis" in self.resource
+            for diag in self.resource["diagnosis"]:
+                assert "urn:uuid:" in diag["condition"]["reference"]
+
+    def test_us_core_param_accepted(self):
+        from mappers.r4.episode_of_care import map_episode_of_care
+        r = map_episode_of_care(self.eoc, us_core=True)
+        assert r["resourceType"] == "EpisodeOfCare"
+
+
+class TestR5EpisodeOfCareMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r5.episode_of_care import map_episode_of_care
+        self.eoc = raw["episodes_of_care"][0]
+        self.resource = map_episode_of_care(self.eoc)
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "EpisodeOfCare"
+
+    def test_r5_diagnosis_uses_codeable_reference(self):
+        if self.eoc.get("condition_ids"):
+            assert "diagnosis" in self.resource
+            diag = self.resource["diagnosis"][0]
+            # R5: CodeableReference wraps Reference inside .reference
+            assert "reference" in diag["condition"]
+            assert "urn:uuid:" in diag["condition"]["reference"]["reference"]

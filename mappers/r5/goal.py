@@ -16,7 +16,7 @@ _ACHIEVEMENT_CODES: dict[str, tuple[str, str]] = {
 }
 
 
-def map_goal(goal: dict) -> dict:
+def map_goal(goal: dict, us_core: bool = False) -> dict:
     ach_code, ach_display = _ACHIEVEMENT_CODES.get(
         goal.get("achievement_status", "in-progress"),
         ("in-progress", "In Progress"),

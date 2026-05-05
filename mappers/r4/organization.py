@@ -1,14 +1,14 @@
 """R4 Organization resource mapper. Spec: https://hl7.org/fhir/R4/organization.html"""
-from mappers._helpers import build_meta
+from mappers._helpers import US_CORE_PROFILES, build_meta
 
 _PROFILE = "http://hl7.org/fhir/StructureDefinition/Organization"
 
 
-def map_organization(org: dict) -> dict:
-    return {
+def map_organization(org: dict, us_core: bool = False) -> dict:
+    resource: dict = {
         "resourceType": "Organization",
         "id": org["id"],
-        "meta": build_meta(_PROFILE),
+        "meta": build_meta(US_CORE_PROFILES["Organization"] if us_core else _PROFILE),
         "active": True,
         "type": [
             {
@@ -38,3 +38,14 @@ def map_organization(org: dict) -> dict:
             }
         ],
     }
+
+    # US Core Organization requires an NPI identifier
+    if us_core and org.get("npi"):
+        resource["identifier"] = [
+            {
+                "system": "http://hl7.org/fhir/sid/us-npi",
+                "value": org["npi"],
+            }
+        ]
+
+    return resource
