@@ -10,7 +10,7 @@ appointment_type_code, appointment_type_display, start, end,
 reason_snomed, reason_display.
 """
 import random
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from generators._rng import new_uuid
 

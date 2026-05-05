@@ -551,7 +551,6 @@ class TestUSCoreObservation:
     def setup_method(self):
         seed_all(0)
         raw = _raw(count=5)
-        from mappers.r4.observation import map_observation
         self.lab_obs = next(
             (o for o in raw["observations"] if o.get("category_code") == "laboratory"), None
         )
