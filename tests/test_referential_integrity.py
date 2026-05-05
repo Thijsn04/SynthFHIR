@@ -103,7 +103,6 @@ class TestReferentialIntegrity:
     def test_service_request_basedOn_resolves(self):
         """Observations with basedOn must reference a ServiceRequest in the Bundle."""
         bundle = self._get_bundle(count=5, seed=99)
-        full_urls = _collect_full_urls(bundle)
 
         sr_urls = {
             entry["fullUrl"]

@@ -359,3 +359,271 @@ class TestDiagnosticReportGenerator:
         obs = [{"id": "o1", "category_code": "vital-signs"}]
         reports = generate_diagnostic_reports_for_encounter("p", "e", "pr", "2024-01-01T10:00:00Z", obs)
         assert reports == []
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 generators
+# ---------------------------------------------------------------------------
+
+class TestLocationGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.location_gen import generate_location
+        loc = generate_location("org-1")
+        for key in ("id", "organization_id", "name", "type_code", "type_display",
+                    "status", "phone", "address_line", "city", "state", "postal_code", "country"):
+            assert key in loc
+
+    def test_links_to_org(self):
+        from generators.location_gen import generate_location
+        loc = generate_location("org-abc")
+        assert loc["organization_id"] == "org-abc"
+
+    def test_generate_for_org(self):
+        from generators.location_gen import generate_locations_for_organization
+        org = generate_cohort(count=1, seed=0)["organizations"][0]
+        locs = generate_locations_for_organization(org, count=3)
+        assert len(locs) == 3
+        assert all(loc["organization_id"] == org["id"] for loc in locs)
+
+    def test_shared_address(self):
+        from generators.location_gen import generate_locations_for_organization
+        org = {"id": "o1", "address_line": "123 Main St", "city": "Boston",
+               "state": "MA", "postal_code": "02101"}
+        locs = generate_locations_for_organization(org, count=2)
+        for loc in locs:
+            assert loc["city"] == "Boston"
+            assert loc["state"] == "MA"
+
+
+class TestPractitionerRoleGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.practitioner_role_gen import generate_practitioner_role
+        prac = generate_cohort(count=1, seed=0)["practitioners"][0]
+        pr = generate_practitioner_role(prac, "org-1")
+        for key in ("id", "practitioner_id", "organization_id", "role_code",
+                    "role_display", "specialty_code", "specialty_display", "active"):
+            assert key in pr
+
+    def test_links_match(self):
+        from generators.practitioner_role_gen import generate_practitioner_role
+        prac = generate_cohort(count=1, seed=0)["practitioners"][0]
+        pr = generate_practitioner_role(prac, "org-xyz")
+        assert pr["practitioner_id"] == prac["id"]
+        assert pr["organization_id"] == "org-xyz"
+        assert pr["specialty_code"] == prac["specialty_code"]
+
+
+class TestCareTeamGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.care_team_gen import generate_care_team
+        raw = generate_cohort(count=1, seed=0)
+        ct = generate_care_team("p1", ["pr1", "pr2"], raw["conditions"][:2])
+        for key in ("id", "patient_id", "practitioner_ids", "status", "name", "condition_ids"):
+            assert key in ct
+
+    def test_condition_ids_populated(self):
+        from generators.care_team_gen import generate_care_team
+        conds = [{"id": "c1"}, {"id": "c2"}]
+        ct = generate_care_team("p1", ["pr1"], conds)
+        assert set(ct["condition_ids"]) == {"c1", "c2"}
+
+
+class TestCarePlanGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.care_plan_gen import generate_care_plan
+        raw = generate_cohort(count=1, seed=0)
+        cp = generate_care_plan("p1", "ct1", raw["conditions"][:2])
+        for key in ("id", "patient_id", "care_team_id", "condition_ids",
+                    "status", "intent", "title", "period_start", "period_end"):
+            assert key in cp
+
+    def test_activities_for_known_conditions(self):
+        from generators.care_plan_gen import generate_care_plan
+        conds = [{"id": "c1", "condition_key": "type2_diabetes",
+                  "recorded_date": "2023-01-01", "display": "Diabetes"}]
+        cp = generate_care_plan("p1", "ct1", conds)
+        assert len(cp.get("activities", [])) >= 1
+
+
+class TestGoalGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.goal_gen import generate_goals_for_patient
+        conds = [{"id": "c1", "condition_key": "type2_diabetes",
+                  "recorded_date": "2023-01-01", "display": "Diabetes"}]
+        goals = generate_goals_for_patient("p1", "cp1", conds)
+        assert len(goals) >= 1
+        for g in goals:
+            for key in ("id", "patient_id", "care_plan_id", "condition_id",
+                        "description", "snomed_code", "lifecycle_status",
+                        "achievement_status", "target_date", "start_date"):
+                assert key in g
+
+    def test_no_goals_for_unknown_condition(self):
+        from generators.goal_gen import generate_goals_for_patient
+        conds = [{"id": "c1", "condition_key": "rare_unknown_xyz",
+                  "recorded_date": "2023-01-01", "display": "Unknown"}]
+        goals = generate_goals_for_patient("p1", "cp1", conds)
+        assert goals == []
+
+
+class TestListGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_three_lists_when_all_present(self):
+        from generators.list_gen import generate_lists_for_patient
+        conds = [{"id": "c1"}]
+        meds = [{"id": "m1"}]
+        allergies = [{"id": "a1"}]
+        lists = generate_lists_for_patient("p1", conds, meds, allergies)
+        assert len(lists) == 3
+
+    def test_missing_items_skipped(self):
+        from generators.list_gen import generate_lists_for_patient
+        lists = generate_lists_for_patient("p1", [], [], [])
+        assert lists == []
+
+    def test_required_keys(self):
+        from generators.list_gen import generate_lists_for_patient
+        conds = [{"id": "c1"}, {"id": "c2"}]
+        lists = generate_lists_for_patient("p1", conds, [], [])
+        lst = lists[0]
+        for key in ("id", "patient_id", "title", "code", "code_display",
+                    "status", "mode", "entry_resource_type", "entry_ids"):
+            assert key in lst
+        assert lst["entry_ids"] == ["c1", "c2"]
+
+
+class TestFamilyMemberHistoryGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_returns_at_least_one(self):
+        from generators.family_member_history_gen import generate_family_member_history
+        members = generate_family_member_history("p1")
+        assert len(members) >= 1
+
+    def test_required_keys(self):
+        from generators.family_member_history_gen import generate_family_member_history
+        for m in generate_family_member_history("p1"):
+            for key in ("id", "patient_id", "relationship_code", "relationship_display",
+                        "name", "sex", "deceased", "conditions"):
+                assert key in m
+
+    def test_conditions_have_codes(self):
+        from generators.family_member_history_gen import generate_family_member_history
+        members = generate_family_member_history("p1")
+        for m in members:
+            for c in m["conditions"]:
+                assert c["snomed_code"]
+                assert c["icd10_code"]
+
+
+class TestConsentGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_always_has_hipaa(self):
+        from generators.consent_gen import generate_consents_for_patient
+        consents = generate_consents_for_patient("p1", "org1")
+        scope_codes = [c["scope_code"] for c in consents]
+        assert "patient-privacy" in scope_codes
+
+    def test_required_keys(self):
+        from generators.consent_gen import generate_consents_for_patient
+        for c in generate_consents_for_patient("p1", "org1"):
+            for key in ("id", "patient_id", "organization_id", "status",
+                        "scope_code", "scope_display", "category_code",
+                        "datetime", "policy_uri", "provision_type"):
+                assert key in c
+
+
+class TestProvenanceGenerator:
+    def setup_method(self):
+        seed_all(0)
+
+    def test_required_keys(self):
+        from generators.provenance_gen import generate_provenance
+        prov = generate_provenance(["t1", "t2"], "pr1", "org1", "2024-01-01T10:00:00Z")
+        for key in ("id", "target_ids", "recorded", "practitioner_id",
+                    "organization_id", "activity_code", "activity_display"):
+            assert key in prov
+
+    def test_target_ids_preserved(self):
+        from generators.provenance_gen import generate_provenance
+        prov = generate_provenance(["a", "b", "c"], "pr1", "org1", "2024-01-01T10:00:00Z")
+        assert set(prov["target_ids"]) == {"a", "b", "c"}
+
+
+class TestCohortPhase2Resources:
+    """Integration tests for Phase 2 resources in the cohort output."""
+
+    def test_new_resource_keys_present(self):
+        raw = generate_cohort(count=3, seed=42)
+        for key in ("locations", "practitioner_roles", "family_member_histories",
+                    "consents", "care_teams", "care_plans", "goals", "lists", "provenances"):
+            assert key in raw, f"Missing key: {key}"
+
+    def test_locations_link_to_orgs(self):
+        raw = generate_cohort(count=2, seed=42)
+        org_ids = {o["id"] for o in raw["organizations"]}
+        for loc in raw["locations"]:
+            assert loc["organization_id"] in org_ids
+
+    def test_practitioner_roles_link_to_practitioners(self):
+        raw = generate_cohort(count=2, seed=42)
+        prac_ids = {p["id"] for p in raw["practitioners"]}
+        for pr in raw["practitioner_roles"]:
+            assert pr["practitioner_id"] in prac_ids
+
+    def test_care_teams_have_patient(self):
+        raw = generate_cohort(count=3, seed=42)
+        patient_ids = {p["id"] for p in raw["patients"]}
+        for ct in raw["care_teams"]:
+            assert ct["patient_id"] in patient_ids
+
+    def test_care_plans_link_to_care_teams(self):
+        raw = generate_cohort(count=3, seed=42)
+        team_ids = {ct["id"] for ct in raw["care_teams"]}
+        for cp in raw["care_plans"]:
+            assert cp["care_team_id"] in team_ids
+
+    def test_goals_link_to_care_plans(self):
+        raw = generate_cohort(count=3, seed=42)
+        plan_ids = {cp["id"] for cp in raw["care_plans"]}
+        for g in raw["goals"]:
+            assert g["care_plan_id"] in plan_ids
+
+    def test_encounters_have_location(self):
+        raw = generate_cohort(count=3, seed=42)
+        loc_ids = {loc["id"] for loc in raw["locations"]}
+        for enc in raw["encounters"]:
+            if enc.get("location_id"):
+                assert enc["location_id"] in loc_ids
+
+    def test_provenances_cover_patient_resources(self):
+        raw = generate_cohort(count=2, seed=42)
+        assert len(raw["provenances"]) == 2  # one per patient
+
+    def test_lists_reference_conditions(self):
+        raw = generate_cohort(count=3, seed=42)
+        cond_ids = {c["id"] for c in raw["conditions"]}
+        for lst in raw["lists"]:
+            if lst["entry_resource_type"] == "Condition":
+                for eid in lst["entry_ids"]:
+                    assert eid in cond_ids

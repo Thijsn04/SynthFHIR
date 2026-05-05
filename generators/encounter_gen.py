@@ -46,6 +46,7 @@ def generate_encounter(
     days_ago_min: int = 1,
     days_ago_max: int = 730,
     conditions: list[dict] | None = None,
+    location_id: str | None = None,
 ) -> dict:
     # Age-appropriate encounter type weighting
     weights = [t[3] if patient_age < 18 else t[2] for t in _ENCOUNTER_TYPES]
@@ -87,4 +88,5 @@ def generate_encounter(
         "start_datetime": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "end_datetime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "reason_codes": reason_codes,
+        "location_id": location_id,
     }

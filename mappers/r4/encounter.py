@@ -54,4 +54,9 @@ def map_encounter(enc: dict) -> dict:
             for rc in enc["reason_codes"]
         ]
 
+    if enc.get("location_id"):
+        resource["location"] = [
+            {"location": ref("Location", enc["location_id"]), "status": "completed"}
+        ]
+
     return resource

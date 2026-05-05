@@ -250,3 +250,235 @@ class TestR5ConditionParticipant:
         r = map_condition(raw["conditions"][0])
         assert "participant" in r
         assert "recorder" not in r
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 R4 mapper tests
+# ---------------------------------------------------------------------------
+
+class TestR4LocationMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=2)
+        from mappers.r4.location import map_location
+        self.resource = map_location(raw["locations"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "Location"
+
+    def test_managing_org_urn(self):
+        assert self.resource["managingOrganization"]["reference"].startswith("urn:uuid:")
+
+    def test_type_present(self):
+        assert "type" in self.resource
+        assert self.resource["type"][0]["coding"][0]["system"]
+
+
+class TestR4PractitionerRoleMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=2)
+        from mappers.r4.practitioner_role import map_practitioner_role
+        self.resource = map_practitioner_role(raw["practitioner_roles"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "PractitionerRole"
+
+    def test_references_urn(self):
+        assert self.resource["practitioner"]["reference"].startswith("urn:uuid:")
+        assert self.resource["organization"]["reference"].startswith("urn:uuid:")
+
+    def test_specialty_snomed(self):
+        codings = self.resource["specialty"][0]["coding"]
+        assert any(c["system"] == "http://snomed.info/sct" for c in codings)
+
+
+class TestR4CareTeamMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.care_team import map_care_team
+        self.resource = map_care_team(raw["care_teams"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "CareTeam"
+
+    def test_subject_urn(self):
+        assert self.resource["subject"]["reference"].startswith("urn:uuid:")
+
+    def test_participant_members_urn(self):
+        for p in self.resource["participant"]:
+            assert p["member"]["reference"].startswith("urn:uuid:")
+
+
+class TestR4CarePlanMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.care_plan import map_care_plan
+        self.resource = map_care_plan(raw["care_plans"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "CarePlan"
+
+    def test_subject_urn(self):
+        assert self.resource["subject"]["reference"].startswith("urn:uuid:")
+
+    def test_care_team_urn(self):
+        assert self.resource["careTeam"][0]["reference"].startswith("urn:uuid:")
+
+    def test_period_present(self):
+        assert "period" in self.resource
+        assert "start" in self.resource["period"]
+        assert "end" in self.resource["period"]
+
+
+class TestR4GoalMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.goal import map_goal
+        goals = raw.get("goals", [])
+        self.resource = map_goal(goals[0]) if goals else None
+
+    def test_resource_type(self):
+        if self.resource is None:
+            pytest.skip("No goals generated")
+        assert self.resource["resourceType"] == "Goal"
+
+    def test_subject_urn(self):
+        if self.resource is None:
+            pytest.skip("No goals generated")
+        assert self.resource["subject"]["reference"].startswith("urn:uuid:")
+
+    def test_lifecycle_status(self):
+        if self.resource is None:
+            pytest.skip("No goals generated")
+        assert self.resource["lifecycleStatus"] in (
+            "proposed", "active", "completed", "on-hold", "cancelled",
+            "entered-in-error", "rejected",
+        )
+
+
+class TestR4ListMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.list import map_list
+        lists = raw.get("lists", [])
+        self.resource = map_list(lists[0]) if lists else None
+
+    def test_resource_type(self):
+        if self.resource is None:
+            pytest.skip("No lists generated")
+        assert self.resource["resourceType"] == "List"
+
+    def test_subject_urn(self):
+        if self.resource is None:
+            pytest.skip("No lists generated")
+        assert self.resource["subject"]["reference"].startswith("urn:uuid:")
+
+    def test_entries_present(self):
+        if self.resource is None:
+            pytest.skip("No lists generated")
+        assert len(self.resource["entry"]) >= 1
+        for e in self.resource["entry"]:
+            assert e["item"]["reference"].startswith("urn:uuid:")
+
+
+class TestR4FamilyMemberHistoryMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.family_member_history import map_family_member_history
+        self.resource = map_family_member_history(raw["family_member_histories"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "FamilyMemberHistory"
+
+    def test_patient_urn(self):
+        assert self.resource["patient"]["reference"].startswith("urn:uuid:")
+
+    def test_dual_coding_in_conditions(self):
+        for cond in self.resource["condition"]:
+            systems = {c["system"] for c in cond["code"]["coding"]}
+            assert "http://snomed.info/sct" in systems
+            assert "http://hl7.org/fhir/sid/icd-10-cm" in systems
+
+
+class TestR4ConsentMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r4.consent import map_consent
+        self.resource = map_consent(raw["consents"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "Consent"
+
+    def test_patient_urn(self):
+        assert self.resource["patient"]["reference"].startswith("urn:uuid:")
+
+    def test_provision_present(self):
+        assert "provision" in self.resource
+        assert self.resource["provision"]["type"] in ("permit", "deny")
+
+
+class TestR4ProvenanceMapper:
+    def setup_method(self):
+        seed_all(0)
+        raw = _raw(count=2)
+        from mappers.r4.provenance import map_provenance
+        self.resource = map_provenance(raw["provenances"][0])
+
+    def test_resource_type(self):
+        assert self.resource["resourceType"] == "Provenance"
+
+    def test_target_references(self):
+        assert len(self.resource["target"]) >= 1
+        for t in self.resource["target"]:
+            assert t["reference"].startswith("urn:uuid:")
+
+    def test_agent_who_urn(self):
+        assert self.resource["agent"][0]["who"]["reference"].startswith("urn:uuid:")
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 R5 mapper spot checks
+# ---------------------------------------------------------------------------
+
+class TestR5CareTeamReason:
+    def test_r5_uses_reason_not_reason_reference(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r5.care_team import map_care_team
+        ct = raw["care_teams"][0]
+        r = map_care_team(ct)
+        if ct.get("condition_ids"):
+            assert "reason" in r
+            assert "reasonReference" not in r
+
+
+class TestR5ConsentStructure:
+    def test_r5_uses_regulatory_basis_not_policy_rule(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r5.consent import map_consent
+        r = map_consent(raw["consents"][0])
+        assert "regulatoryBasis" in r
+        assert "policyRule" not in r
+        assert "manager" in r
+        assert "organization" not in r
+
+
+class TestR5CarePlanActivities:
+    def test_r5_uses_planned_activity_detail(self):
+        seed_all(0)
+        raw = _raw(count=3)
+        from mappers.r5.care_plan import map_care_plan
+        cp = raw["care_plans"][0]
+        r = map_care_plan(cp)
+        if r.get("activity"):
+            for act in r["activity"]:
+                assert "plannedActivityDetail" in act
+                assert "detail" not in act
