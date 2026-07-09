@@ -1,14 +1,18 @@
-# SynthFHIR
+<div align="center">
+
+# 🧬 SynthFHIR
+
+**A free, locally-hosted synthetic FHIR patient-data generator**
+
+Produces fully relational clinical datasets with realistic, interconnected records across **15 resource types**, all linked by ID and conformant to FHIR R4/R5 and US Core profiles. Built with [Faker](https://faker.readthedocs.io/) — no external APIs, no paid services, runs entirely on your machine.
 
 [![CI](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml/badge.svg)](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![HL7 FHIR](https://img.shields.io/badge/HL7-FHIR%20R4%2FR5-e6007e.svg)](https://hl7.org/fhir/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A free, open-source, locally-hosted synthetic FHIR patient data generator. Produces fully relational clinical datasets with realistic, interconnected records across **15 resource types**, all linked by ID and conformant to FHIR R4/R5 and US Core profiles.
-
-Built with [Faker](https://faker.readthedocs.io/). No external APIs. No paid services. Runs entirely on your machine.
-
-Supports **FHIR R4** and **FHIR R5**.
+</div>
 
 ---
 
@@ -301,3 +305,10 @@ Adding a completely new resource type requires four steps:
 ## License
 
 MIT. Free to use in any project, commercial or otherwise.
+
+
+---
+
+<div align="center">
+<sub>Built by <a href="https://github.com/Thijsn04">Thijs Nannings</a> · Medical Informatics @ UvA · <a href="https://lythos.nl">Lythos</a></sub>
+</div>
