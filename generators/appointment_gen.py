@@ -1,8 +1,8 @@
 """Appointment generator.
 
 Produces raw Appointment dicts for each clinic visit. Every Appointment is
-linked to a fulfilling Encounter — the appointment precedes the encounter
-start by 0–2 days (same-day for outpatient, short lead for referrals).
+linked to a fulfilling Encounter - the appointment precedes the encounter
+start by 0-2 days (same-day for outpatient, short lead for referrals).
 
 Output keys: id, patient_id, practitioner_id, organization_id, location_id,
 encounter_id, status, service_type_code, service_type_display,

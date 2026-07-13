@@ -1,7 +1,7 @@
 """R5 EpisodeOfCare resource mapper. Spec: https://hl7.org/fhir/R5/episodeofcare.html
 
 R5 changes: diagnosis.condition is now a CodeableReference, not a plain
-Reference — it wraps the Reference inside a .reference field.
+Reference - it wraps the Reference inside a .reference field.
 """
 from mappers._helpers import build_meta, ref
 

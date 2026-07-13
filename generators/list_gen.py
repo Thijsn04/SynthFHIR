@@ -1,6 +1,6 @@
 """List generator.
 
-Produces FHIR List resources — problem list, medication list, and allergy list —
+Produces FHIR List resources - problem list, medication list, and allergy list -
 aggregating resource IDs already generated for a patient.
 
 Output keys: id, patient_id, title, code, code_display, status, mode,

@@ -15,7 +15,7 @@ from generators.organization_gen import generate_organization
 from generators.patient_gen import generate_patient, generate_patients
 
 # ---------------------------------------------------------------------------
-# _rng — seeding reproducibility
+# _rng - seeding reproducibility
 # ---------------------------------------------------------------------------
 
 class TestRng:
@@ -328,7 +328,7 @@ class TestImmunizationGenerator:
         seed_all(0)
         imms = generate_immunizations_for_patient("pid", "pracid", patient_age=70)
         cvx_codes = {i["cvx_code"] for i in imms}
-        # HPV (CVX 62) is only for age 9-45 — should not appear for 70-year-old
+        # HPV (CVX 62) is only for age 9-45 - should not appear for 70-year-old
         assert "62" not in cvx_codes
 
     def test_required_keys(self):
@@ -630,7 +630,7 @@ class TestCohortPhase2Resources:
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 generators — Temporal Depth
+# Phase 4 generators - Temporal Depth
 # ---------------------------------------------------------------------------
 
 class TestYearsParameter:

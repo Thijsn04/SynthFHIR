@@ -341,15 +341,19 @@ def generate_conditions_for_patient(
     practitioner_id: str,
     patient_age: int,
     condition_filter: str | None = None,
+    patient_sex: str | None = None,
 ) -> list[dict]:
     """Generate age-appropriate conditions using the comorbidity graph.
 
     If condition_filter is given, that condition is always the primary diagnosis.
     Additional comorbidities are drawn using weighted conditional probabilities
-    from the epidemiological adjacency matrix. The count is age-stratified.
+    from the epidemiological adjacency matrix. The count is age-stratified, and
+    sex-specific conditions are only assigned to patients of the matching sex.
     Raises ValueError if the filter matches no known condition.
     """
     eligible = conditions_for_age(patient_age)
+    if patient_sex in ("male", "female"):
+        eligible = [c for c in eligible if c.sex is None or c.sex == patient_sex]
     if not eligible:
         eligible = sorted(CONDITIONS, key=lambda c: c.typical_age_min)[:3]
 

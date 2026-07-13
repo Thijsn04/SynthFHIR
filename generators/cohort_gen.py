@@ -1,4 +1,4 @@
-"""Cohort orchestrator — dependency-ordered generation of a full relational dataset.
+"""Cohort orchestrator - dependency-ordered generation of a full relational dataset.
 
 Generation order:
   Organization → Location (per org) → Practitioner → PractitionerRole →
@@ -40,7 +40,7 @@ Phase 4 additions:
 import random
 from datetime import date, datetime
 
-from generators._rng import seed_all
+from generators._rng import generation_scope
 from generators.allergy_gen import generate_allergies_for_patient
 from generators.appointment_gen import generate_appointment
 from generators.care_plan_gen import generate_care_plan
@@ -49,6 +49,7 @@ from generators.condition_gen import generate_conditions_for_patient
 from generators.consent_gen import generate_consents_for_patient
 from generators.coverage_gen import generate_coverage_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
+from generators.document_reference_gen import generate_document_reference_for_encounter
 from generators.encounter_gen import generate_encounter
 from generators.episode_of_care_gen import generate_episode_of_care
 from generators.family_member_history_gen import generate_family_member_history
@@ -56,6 +57,7 @@ from generators.goal_gen import generate_goals_for_patient
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.list_gen import generate_lists_for_patient
 from generators.location_gen import generate_locations_for_organization
+from generators.medication_dispense_gen import generate_dispenses_for_medications
 from generators.medication_gen import generate_medications_for_patient
 from generators.observation_gen import (
     generate_observations_for_encounter,
@@ -87,18 +89,40 @@ def generate_cohort(
     num_organizations: int = 1,
     years: int = 2,
 ) -> dict:
-    """Returns a dict of raw lists keyed by resource type, ready for mapping.
+    """Generate a full relational cohort as a dict of raw lists per resource type.
+
+    Runs inside `generation_scope` so that seeded output stays reproducible even
+    when multiple generations run concurrently.
 
     Raises ValueError if condition_filter matches no known condition.
     """
-    if seed is not None:
-        seed_all(seed)
+    with generation_scope(seed):
+        return _build_cohort(
+            count=count,
+            age_min=age_min,
+            age_max=age_max,
+            condition_filter=condition_filter,
+            num_practitioners=num_practitioners,
+            num_organizations=num_organizations,
+            years=years,
+        )
 
-    # Step 1 — infrastructure
+
+def _build_cohort(
+    count: int,
+    age_min: int,
+    age_max: int,
+    condition_filter: str | None,
+    num_practitioners: int,
+    num_organizations: int,
+    years: int,
+) -> dict:
+    """Build the cohort. Assumes the caller holds the generation scope."""
+    # Step 1 - infrastructure
     organizations = [generate_organization() for _ in range(num_organizations)]
     org_ids = [o["id"] for o in organizations]
 
-    # Locations — 2 per organization, sharing the org's address
+    # Locations - 2 per organization, sharing the org's address
     locations: list[dict] = []
     location_ids_by_org: dict[str, list[str]] = {}
     for org in organizations:
@@ -112,7 +136,7 @@ def generate_cohort(
     ]
     prac_ids = [p["id"] for p in practitioners]
 
-    # PractitionerRoles — one per practitioner linked to their organization
+    # PractitionerRoles - one per practitioner linked to their organization
     practitioner_roles = [
         generate_practitioner_role(prac, prac["organization_id"])
         for prac in practitioners
@@ -133,7 +157,9 @@ def generate_cohort(
     episodes_of_care: list[dict] = []
     observations: list[dict] = []
     diagnostic_reports: list[dict] = []
+    document_references: list[dict] = []
     medications: list[dict] = []
+    medication_dispenses: list[dict] = []
     procedures: list[dict] = []
     service_requests: list[dict] = []
     coverages: list[dict] = []
@@ -148,12 +174,13 @@ def generate_cohort(
         prac_id = random.choice(prac_ids)
         org_id = random.choice(org_ids)
 
-        # Conditions — primary filter + comorbidity graph (raises on bad filter)
+        # Conditions - primary filter + comorbidity graph (raises on bad filter)
         pt_conditions = generate_conditions_for_patient(
             patient_id=patient["id"],
             practitioner_id=prac_id,
             patient_age=patient_age,
             condition_filter=condition_filter,
+            patient_sex=patient.get("gender"),
         )
         conditions.extend(pt_conditions)
 
@@ -168,36 +195,36 @@ def generate_cohort(
         )
         enc_window = min(years * 365, max(30, earliest_recorded_days_ago - 1))
 
-        # Allergies — probabilistic
+        # Allergies - probabilistic
         pt_allergies = generate_allergies_for_patient(patient["id"], prac_id)
         allergies.extend(pt_allergies)
 
-        # Immunizations — age-appropriate coverage
+        # Immunizations - age-appropriate coverage
         immunizations.extend(
             generate_immunizations_for_patient(patient["id"], prac_id, patient_age)
         )
 
-        # Insurance coverage — one per patient
+        # Insurance coverage - one per patient
         coverages.append(generate_coverage_for_patient(patient["id"], patient_age))
 
-        # Family / emergency contacts — age + marital status aware
+        # Family / emergency contacts - age + marital status aware
         related_persons.extend(generate_related_persons(patient))
 
-        # FamilyMemberHistory — 1–3 relatives with hereditary conditions
+        # FamilyMemberHistory - 1-3 relatives with hereditary conditions
         family_member_histories.extend(generate_family_member_history(patient["id"]))
 
-        # Consent — HIPAA + optional research
+        # Consent - HIPAA + optional research
         consents.extend(generate_consents_for_patient(patient["id"], org_id))
 
-        # CareTeam — practitioners managing this patient's conditions
+        # CareTeam - practitioners managing this patient's conditions
         care_team = generate_care_team(patient["id"], [prac_id], pt_conditions)
         care_teams.append(care_team)
 
-        # CarePlan — links patient, care team, and conditions
+        # CarePlan - links patient, care team, and conditions
         care_plan = generate_care_plan(patient["id"], care_team["id"], pt_conditions)
         care_plans.append(care_plan)
 
-        # Goals — one per condition linked to the care plan
+        # Goals - one per condition linked to the care plan
         pt_goals = generate_goals_for_patient(patient["id"], care_plan["id"], pt_conditions)
         goals.extend(pt_goals)
 
@@ -227,7 +254,7 @@ def generate_cohort(
             encounters.append(enc)
             pt_encounters.append(enc)
 
-            # Appointment — scheduled 0-2 days before this encounter
+            # Appointment - scheduled 0-2 days before this encounter
             appointments.append(generate_appointment(
                 encounter=enc,
                 patient_id=patient["id"],
@@ -242,7 +269,7 @@ def generate_cohort(
                     cond["encounter_id"] = enc["id"]
                 first_enc_written = True
 
-            # ServiceRequests first — observation generator needs the SR ids for basedOn
+            # ServiceRequests first - observation generator needs the SR ids for basedOn
             enc_srs = generate_service_requests_for_encounter(
                 patient_id=patient["id"],
                 encounter_id=enc["id"],
@@ -289,7 +316,19 @@ def generate_cohort(
                 )
             )
 
-        # EpisodeOfCare — one per patient grouping all encounters
+            # DocumentReference: one clinical note per encounter
+            document_references.append(
+                generate_document_reference_for_encounter(
+                    patient_id=patient["id"],
+                    encounter_id=enc["id"],
+                    practitioner_id=prac_id,
+                    organization_id=org_id,
+                    effective_datetime=enc["start_datetime"],
+                    conditions=pt_conditions,
+                )
+            )
+
+        # EpisodeOfCare - one per patient grouping all encounters
         episodes_of_care.append(generate_episode_of_care(
             patient_id=patient["id"],
             organization_id=org_id,
@@ -297,7 +336,7 @@ def generate_cohort(
             conditions=pt_conditions,
         ))
 
-        # MedicationRequests — initial set at first encounter, potential escalation mid-timeline
+        # MedicationRequests - initial set at first encounter, potential escalation mid-timeline
         first_enc_id = pt_encounters[0]["id"] if pt_encounters else ""
         pt_meds = generate_medications_for_patient(
             patient_id=patient["id"],
@@ -325,7 +364,10 @@ def generate_cohort(
 
         medications.extend(pt_meds)
 
-        # Lists — aggregate conditions, medications, allergies
+        # MedicationDispense: pharmacy fills for most prescriptions
+        medication_dispenses.extend(generate_dispenses_for_medications(pt_meds))
+
+        # Lists - aggregate conditions, medications, allergies
         lists.extend(
             generate_lists_for_patient(
                 patient_id=patient["id"],
@@ -335,7 +377,7 @@ def generate_cohort(
             )
         )
 
-        # Provenance — audit trail for this patient's clinical data
+        # Provenance - audit trail for this patient's clinical data
         prov_targets = (
             [patient["id"]]
             + [c["id"] for c in pt_conditions]
@@ -373,7 +415,9 @@ def generate_cohort(
         "episodes_of_care": episodes_of_care,
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
+        "document_references": document_references,
         "medications": medications,
+        "medication_dispenses": medication_dispenses,
         "procedures": procedures,
         "service_requests": service_requests,
         "lists": lists,

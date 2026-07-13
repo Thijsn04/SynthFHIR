@@ -16,7 +16,7 @@ def generate_consents_for_patient(
     patient_id: str,
     organization_id: str,
 ) -> list[dict]:
-    """Return 1–2 Consent resources per patient."""
+    """Return 1-2 Consent resources per patient."""
     today = date.today()
     consents: list[dict] = []
 
