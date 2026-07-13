@@ -1,6 +1,6 @@
 # FHIR resources
 
-A cohort is a connected graph of 25 resource types across R4 and R5. Every
+A cohort is a connected graph of 27 resource types across R4 and R5. Every
 resource references others by `urn:uuid:` id. This page lists what is generated
 and the terminology each resource carries.
 
@@ -58,8 +58,12 @@ and the terminology each resource carries.
   interpretation flag only when the value is out of range. Survey scores such as
   PHQ-9 and GAD-7 are emitted as `valueInteger`.
 - **DiagnosticReport**: groups the lab observations of an encounter.
+- **DocumentReference**: a clinical note per encounter (LOINC-typed, US Core
+  clinical-note category) with the note text as a base64 attachment.
 - **MedicationRequest**: RxNorm coded, with dosage instructions and a
   `dispenseRequest` carrying quantity, supply days, and refills.
+- **MedicationDispense**: the pharmacy fill for most prescriptions, linked to its
+  authorizing MedicationRequest with quantity, days supply, and handover date.
 - **Procedure**: SNOMED coded, a physical exam every encounter plus
   condition-specific procedures, with performer and body site.
 

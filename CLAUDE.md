@@ -55,4 +55,7 @@ tests/test_api.py                   # HTTP endpoints, status codes, bundle struc
 tests/test_validation.py            # the bundle validator
 tests/test_public_api.py            # library, CLI, POST endpoint, concurrency determinism
 tests/test_referential_integrity.py # cross-resource reference resolution
+tests/test_realism.py               # geographic coherence, sex-appropriate conditions
+tests/test_new_resources.py         # DocumentReference and MedicationDispense
+tests/test_config.py                # optional API key and configuration
 ```

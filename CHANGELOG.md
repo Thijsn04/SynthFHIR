@@ -3,6 +3,27 @@
 All notable changes to this project are documented here. The format is based on
 Keep a Changelog, and this project adheres to semantic versioning.
 
+## [0.4.0]
+
+### Added
+
+- Two FHIR resource types, bringing the total to 27: **DocumentReference** (a
+  clinical note per encounter) and **MedicationDispense** (pharmacy fills linked
+  to their MedicationRequest), both R4 and R5 and validated.
+- Geographic coherence: patient city, state, and ZIP now agree with a real US
+  locality (`data/geography.py`) instead of being drawn independently.
+- Sex-appropriate conditions: `ConditionDef` gains an optional sex restriction,
+  so conditions such as prostate cancer are only assigned to male patients.
+- Optional API key: set `SYNTHFHIR_API_KEY` to require a key on `/api` requests
+  (via `X-API-Key` or `Authorization: Bearer`). Configurable CORS origins via
+  `SYNTHFHIR_CORS_ORIGINS`. See docs/configuration.md.
+- New documentation: a resource-expansion roadmap and a configuration reference.
+
+### Changed
+
+- The US Core CapabilityStatement now advertises the DocumentReference profile.
+- Version bumped to 0.4.0.
+
 ## [0.3.0]
 
 ### Added

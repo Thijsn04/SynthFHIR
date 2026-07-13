@@ -347,8 +347,9 @@ _RESOURCE_TYPES = [
     "Patient", "Practitioner", "PractitionerRole", "Organization", "Location",
     "RelatedPerson", "Condition", "AllergyIntolerance", "Immunization", "Coverage",
     "Encounter", "Appointment", "EpisodeOfCare", "Observation", "DiagnosticReport",
-    "MedicationRequest", "Procedure", "ServiceRequest", "CareTeam", "CarePlan",
-    "Goal", "List", "FamilyMemberHistory", "Consent", "Provenance",
+    "DocumentReference", "MedicationRequest", "MedicationDispense", "Procedure",
+    "ServiceRequest", "CareTeam", "CarePlan", "Goal", "List",
+    "FamilyMemberHistory", "Consent", "Provenance",
 ]
 
 _US_CORE_BASE = "http://hl7.org/fhir/us/core/StructureDefinition"
@@ -388,6 +389,7 @@ def capability_statement(
                 "CareTeam":             f"{_US_CORE_BASE}/us-core-careteam",
                 "Condition":            f"{_US_CORE_BASE}/us-core-condition-problems-health-concerns",
                 "DiagnosticReport":     f"{_US_CORE_BASE}/us-core-diagnosticreport-lab",
+                "DocumentReference":    f"{_US_CORE_BASE}/us-core-documentreference",
                 "Encounter":            f"{_US_CORE_BASE}/us-core-encounter",
                 "Goal":                 f"{_US_CORE_BASE}/us-core-goal",
                 "Immunization":         f"{_US_CORE_BASE}/us-core-immunization",
@@ -412,7 +414,7 @@ def capability_statement(
         "kind": "instance",
         "software": {
             "name": "SynthFHIR",
-            "version": "0.3.0",
+            "version": "0.4.0",
         },
         "fhirVersion": fhir_version,
         "format": ["application/fhir+json"],

@@ -28,6 +28,8 @@ _REQUIRED_ELEMENTS: dict[str, tuple[str, ...]] = {
     "Condition": ("subject",),
     "MedicationRequest": ("status", "intent", "subject"),
     "DiagnosticReport": ("status", "code"),
+    "DocumentReference": ("status", "type", "content", "subject"),
+    "MedicationDispense": ("status", "subject"),
     "Immunization": ("status", "vaccineCode", "patient"),
     "AllergyIntolerance": ("patient",),
     "Procedure": ("status", "subject"),

@@ -49,6 +49,7 @@ from generators.condition_gen import generate_conditions_for_patient
 from generators.consent_gen import generate_consents_for_patient
 from generators.coverage_gen import generate_coverage_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
+from generators.document_reference_gen import generate_document_reference_for_encounter
 from generators.encounter_gen import generate_encounter
 from generators.episode_of_care_gen import generate_episode_of_care
 from generators.family_member_history_gen import generate_family_member_history
@@ -56,6 +57,7 @@ from generators.goal_gen import generate_goals_for_patient
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.list_gen import generate_lists_for_patient
 from generators.location_gen import generate_locations_for_organization
+from generators.medication_dispense_gen import generate_dispenses_for_medications
 from generators.medication_gen import generate_medications_for_patient
 from generators.observation_gen import (
     generate_observations_for_encounter,
@@ -155,7 +157,9 @@ def _build_cohort(
     episodes_of_care: list[dict] = []
     observations: list[dict] = []
     diagnostic_reports: list[dict] = []
+    document_references: list[dict] = []
     medications: list[dict] = []
+    medication_dispenses: list[dict] = []
     procedures: list[dict] = []
     service_requests: list[dict] = []
     coverages: list[dict] = []
@@ -312,6 +316,18 @@ def _build_cohort(
                 )
             )
 
+            # DocumentReference: one clinical note per encounter
+            document_references.append(
+                generate_document_reference_for_encounter(
+                    patient_id=patient["id"],
+                    encounter_id=enc["id"],
+                    practitioner_id=prac_id,
+                    organization_id=org_id,
+                    effective_datetime=enc["start_datetime"],
+                    conditions=pt_conditions,
+                )
+            )
+
         # EpisodeOfCare - one per patient grouping all encounters
         episodes_of_care.append(generate_episode_of_care(
             patient_id=patient["id"],
@@ -347,6 +363,9 @@ def _build_cohort(
                     existing_rx.add(med["rxnorm_code"])
 
         medications.extend(pt_meds)
+
+        # MedicationDispense: pharmacy fills for most prescriptions
+        medication_dispenses.extend(generate_dispenses_for_medications(pt_meds))
 
         # Lists - aggregate conditions, medications, allergies
         lists.extend(
@@ -396,7 +415,9 @@ def _build_cohort(
         "episodes_of_care": episodes_of_care,
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
+        "document_references": document_references,
         "medications": medications,
+        "medication_dispenses": medication_dispenses,
         "procedures": procedures,
         "service_requests": service_requests,
         "lists": lists,

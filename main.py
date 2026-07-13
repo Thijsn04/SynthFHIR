@@ -1,9 +1,10 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+import config
 from api.routes import router
 
 app = FastAPI(
@@ -14,18 +15,33 @@ app = FastAPI(
         "organizations, conditions, allergies, encounters, and observations, all "
         "linked by ID. No external APIs. No paid services. Runs locally."
     ),
-    version="0.3.0",
+    version="0.4.0",
     license_info={"name": "MIT"},
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=config.CORS_ORIGINS,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
+
+def require_api_key(
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> None:
+    """Enforce the optional API key when SYNTHFHIR_API_KEY is configured."""
+    if not config.API_KEY:
+        return
+    provided = x_api_key
+    if not provided and authorization and authorization.lower().startswith("bearer "):
+        provided = authorization.split(" ", 1)[1]
+    if provided != config.API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+app.include_router(router, prefix="/api", dependencies=[Depends(require_api_key)])
 
 
 @app.get("/health", tags=["System"], summary="Liveness probe")

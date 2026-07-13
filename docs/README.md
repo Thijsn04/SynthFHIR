@@ -18,13 +18,15 @@ web console. It never contacts external services and stores no data.
 ## Concepts
 
 - [Architecture](architecture.md): how the layers fit together.
-- [FHIR resources](resources.md): the 25 resource types and their codings.
+- [FHIR resources](resources.md): the 27 resource types and their codings.
 - [Catalogs](catalogs.md): conditions, observations, medications, and how to extend them.
 - [Reproducibility](reproducibility.md): what a seed guarantees.
 - [Validation](validation.md): the built-in bundle validator.
+- [Roadmap](roadmap.md): planned resource types and realism work.
 
 ## Operations
 
+- [Configuration](configuration.md): environment variables and the optional API key.
 - [Deployment](deployment.md): Docker and production notes.
 - [FAQ](faq.md): common questions.
 

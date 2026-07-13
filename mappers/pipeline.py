@@ -18,6 +18,7 @@ from mappers.r4 import condition as r4_condition
 from mappers.r4 import consent as r4_consent
 from mappers.r4 import coverage as r4_coverage
 from mappers.r4 import diagnostic_report as r4_diagnostic_report
+from mappers.r4 import document_reference as r4_document_reference
 from mappers.r4 import encounter as r4_encounter
 from mappers.r4 import episode_of_care as r4_episode_of_care
 from mappers.r4 import family_member_history as r4_family_member_history
@@ -26,6 +27,7 @@ from mappers.r4 import immunization as r4_immunization
 from mappers.r4 import list as r4_list
 from mappers.r4 import location as r4_location
 from mappers.r4 import medication as r4_medication
+from mappers.r4 import medication_dispense as r4_medication_dispense
 from mappers.r4 import observation as r4_observation
 from mappers.r4 import organization as r4_organization
 from mappers.r4 import patient as r4_patient
@@ -44,6 +46,7 @@ from mappers.r5 import condition as r5_condition
 from mappers.r5 import consent as r5_consent
 from mappers.r5 import coverage as r5_coverage
 from mappers.r5 import diagnostic_report as r5_diagnostic_report
+from mappers.r5 import document_reference as r5_document_reference
 from mappers.r5 import encounter as r5_encounter
 from mappers.r5 import episode_of_care as r5_episode_of_care
 from mappers.r5 import family_member_history as r5_family_member_history
@@ -52,6 +55,7 @@ from mappers.r5 import immunization as r5_immunization
 from mappers.r5 import list as r5_list
 from mappers.r5 import location as r5_location
 from mappers.r5 import medication as r5_medication
+from mappers.r5 import medication_dispense as r5_medication_dispense
 from mappers.r5 import observation as r5_observation
 from mappers.r5 import organization as r5_organization
 from mappers.r5 import patient as r5_patient
@@ -78,6 +82,8 @@ OBS_MAPPER = {"R4": r4_observation.map_observation, "R5": r5_observation.map_obs
 MED_MAPPER = {"R4": r4_medication.map_medication, "R5": r5_medication.map_medication}
 IMM_MAPPER = {"R4": r4_immunization.map_immunization, "R5": r5_immunization.map_immunization}
 DR_MAPPER = {"R4": r4_diagnostic_report.map_diagnostic_report, "R5": r5_diagnostic_report.map_diagnostic_report}
+DOC_REF_MAPPER = {"R4": r4_document_reference.map_document_reference, "R5": r5_document_reference.map_document_reference}
+MED_DISP_MAPPER = {"R4": r4_medication_dispense.map_medication_dispense, "R5": r5_medication_dispense.map_medication_dispense}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -116,7 +122,9 @@ _ORDER: list[tuple[dict, str]] = [
     (EOC_MAPPER, "episodes_of_care"),
     (OBS_MAPPER, "observations"),
     (DR_MAPPER, "diagnostic_reports"),
+    (DOC_REF_MAPPER, "document_references"),
     (MED_MAPPER, "medications"),
+    (MED_DISP_MAPPER, "medication_dispenses"),
     (PROC_MAPPER, "procedures"),
     (SR_MAPPER, "service_requests"),
     (LIST_MAPPER, "lists"),
