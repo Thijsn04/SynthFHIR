@@ -17,6 +17,10 @@ class ConditionDef:
     icd10_code: str
     linked_obs_types: tuple[str, ...]
     typical_age_min: int = 0
+    # Restrict to patients of this administrative sex ("male" or "female"), or
+    # None when the condition can occur in anyone. Used to avoid clinically
+    # impossible pairings such as prostate cancer in a female patient.
+    sex: str | None = None
 
 
 CONDITIONS: list[ConditionDef] = [
@@ -233,6 +237,7 @@ CONDITIONS: list[ConditionDef] = [
         icd10_code="C61",
         linked_obs_types=(),
         typical_age_min=50,
+        sex="male",
     ),
     ConditionDef(
         key="melanoma",

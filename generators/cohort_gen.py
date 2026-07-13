@@ -176,6 +176,7 @@ def _build_cohort(
             practitioner_id=prac_id,
             patient_age=patient_age,
             condition_filter=condition_filter,
+            patient_sex=patient.get("gender"),
         )
         conditions.extend(pt_conditions)
 

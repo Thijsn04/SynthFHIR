@@ -73,3 +73,22 @@ def e164_phone() -> str:
     """US phone number in E.164 format (+1XXXXXXXXXX)."""
     digits = fake.numerify("##########")
     return f"+1{digits}"
+
+
+def coherent_address() -> dict:
+    """A US address whose city, state, and ZIP agree with a real locality.
+
+    Faker draws city, state, and ZIP independently, which yields impossible
+    combinations. This anchors all three to one real locality (see
+    data/geography.py) and completes the ZIP with a plausible suffix.
+    """
+    from data.geography import LOCALITIES
+
+    loc = random.choice(LOCALITIES)
+    return {
+        "address_line": fake.street_address(),
+        "city": loc.city,
+        "state": loc.state,
+        "postal_code": loc.zip_prefix + fake.numerify("##"),
+        "country": "US",
+    }

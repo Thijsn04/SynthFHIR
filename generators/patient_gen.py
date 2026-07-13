@@ -12,7 +12,7 @@ ethnicity_display, birth_sex, height_cm, obs_baseline.
 """
 import random
 
-from generators._rng import e164_phone, fake, new_uuid
+from generators._rng import coherent_address, e164_phone, fake, new_uuid
 
 _GENDERS = ["male", "female", "other", "unknown"]
 _GENDER_WEIGHTS = [47, 47, 4, 2]
@@ -147,6 +147,7 @@ def generate_patient(age_min: int = 0, age_max: int = 100) -> dict:
     lang_code, lang_display = _pick(_LANGUAGES, _LANGUAGE_WEIGHTS)
 
     obs_baseline = _generate_obs_baseline(gender, age)
+    address = coherent_address()
 
     return {
         "id": new_uuid(),
@@ -165,11 +166,11 @@ def generate_patient(age_min: int = 0, age_max: int = 100) -> dict:
         "phone_home": e164_phone(),
         "phone_mobile": e164_phone(),
         "email": fake.email(),
-        "address_line": fake.street_address(),
-        "city": fake.city(),
-        "state": fake.state_abbr(),
-        "postal_code": fake.postcode(),
-        "country": "US",
+        "address_line": address["address_line"],
+        "city": address["city"],
+        "state": address["state"],
+        "postal_code": address["postal_code"],
+        "country": address["country"],
         "language_code": lang_code,
         "language_display": lang_display,
         "race_code": race_code,

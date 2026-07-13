@@ -524,8 +524,9 @@ class TestUSCoreCondition:
 
 class TestUSCoreAllergy:
     def test_us_core_profile(self):
-        seed_all(0)
-        raw = _raw()
+        # Allergies are probabilistic, so use a cohort large enough to guarantee one.
+        raw = _raw(count=20)
+        assert raw["allergies"], "expected at least one allergy in a 20-patient cohort"
         from mappers.r4.allergy import map_allergy
         r = map_allergy(raw["allergies"][0], us_core=True)
         assert f"{_US_CORE_BASE}/us-core-allergyintolerance" == r["meta"]["profile"][0]
