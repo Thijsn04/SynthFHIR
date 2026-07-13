@@ -14,14 +14,15 @@ app = FastAPI(
         "organizations, conditions, allergies, encounters, and observations, all "
         "linked by ID. No external APIs. No paid services. Runs locally."
     ),
-    version="0.2.0",
+    version="0.3.0",
     license_info={"name": "MIT"},
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 app.include_router(router, prefix="/api")

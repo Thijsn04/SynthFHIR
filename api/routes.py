@@ -412,7 +412,7 @@ def capability_statement(
         "kind": "instance",
         "software": {
             "name": "SynthFHIR",
-            "version": "0.2.0",
+            "version": "0.3.0",
         },
         "fhirVersion": fhir_version,
         "format": ["application/fhir+json"],

@@ -57,6 +57,13 @@ class TestLibrary:
         bundle = synthfhir.generate_cohort_bundle(count=5, seed=7, profile="us-core")
         assert synthfhir.validate_bundle(bundle).valid
 
+    def test_seed_is_byte_reproducible(self):
+        # With a seed the record-keeping clock is frozen, so output is identical
+        # down to the timestamps, not just the clinical content.
+        a = synthfhir.generate_cohort_bundle(count=4, seed=2024)
+        b = synthfhir.generate_cohort_bundle(count=4, seed=2024)
+        assert json.dumps(a) == json.dumps(b)
+
 
 class TestConcurrencyDeterminism:
     def test_concurrent_seeded_runs_are_identical(self):

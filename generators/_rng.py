@@ -46,11 +46,22 @@ def generation_scope(seed: int | None = None) -> Iterator[None]:
 
         with generation_scope(seed):
             ...build resources...
+
+    When a seed is given, the record-keeping clock is frozen for the duration so
+    that timestamps are deterministic too and the output is byte-reproducible.
     """
+    import clock
+
     with _generation_lock:
+        token = None
         if seed is not None:
             seed_all(seed)
-        yield
+            token = clock.freeze(clock.today_midnight_utc())
+        try:
+            yield
+        finally:
+            if token is not None:
+                clock.unfreeze(token)
 
 
 def new_uuid() -> str:

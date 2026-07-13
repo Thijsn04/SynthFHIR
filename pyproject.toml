@@ -4,15 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synthfhir"
-version = "0.2.0"
-description = "Locally-hosted synthetic FHIR patient data generator"
+version = "0.3.0"
+description = "Locally hosted synthetic FHIR patient data generator with a REST API, CLI, and web console"
+readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Thijs Nannings" }]
+keywords = ["fhir", "synthetic-data", "healthcare", "hl7", "test-data", "fastapi"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "fastapi>=0.104.0,<1.0.0",
     "uvicorn[standard]>=0.24.0",
     "faker>=20.0.0",
     "pydantic>=2.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Thijsn04/SynthFHIR"
+Repository = "https://github.com/Thijsn04/SynthFHIR"
+Issues = "https://github.com/Thijsn04/SynthFHIR/issues"
+Documentation = "https://github.com/Thijsn04/SynthFHIR/tree/main/docs"
 
 [project.optional-dependencies]
 dev = [
@@ -23,8 +43,17 @@ dev = [
     "mypy>=1.10",
 ]
 
+[project.scripts]
+synthfhir = "cli:main"
+
+[tool.setuptools]
+py-modules = ["main", "cli", "synthfhir"]
+
 [tool.setuptools.packages.find]
-include = ["api*", "data*", "generators*", "mappers*"]
+include = ["api*", "data*", "generators*", "mappers*", "validation*"]
+
+[tool.setuptools.package-data]
+"*" = ["web/*.html", "web/*.css", "web/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

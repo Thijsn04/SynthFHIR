@@ -30,8 +30,13 @@ jobs:
         run: ruff check .
 
       - name: Type check
-        run: mypy generators/ mappers/ api/ data/
+        run: mypy generators/ mappers/ api/ data/ validation/ main.py cli.py synthfhir.py
         continue-on-error: true
+
+      - name: CLI smoke test
+        run: |
+          synthfhir --version
+          synthfhir generate --count 2 --seed 1 | synthfhir validate -
 
       - name: Run tests
         run: pytest tests/ -v --tb=short

@@ -1,9 +1,10 @@
 """Shared FHIR building-block helpers used by both the R4 and R5 mappers."""
-from datetime import UTC, datetime
+from clock import utcnow_str
 
 
 def utcnow() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    """Record-keeping timestamp; deterministic when a seeded generation freezes the clock."""
+    return utcnow_str()
 
 
 def ref(resource_type: str, resource_id: str) -> dict:
