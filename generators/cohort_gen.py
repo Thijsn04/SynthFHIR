@@ -40,7 +40,7 @@ Phase 4 additions:
 import random
 from datetime import date, datetime
 
-from generators._rng import seed_all
+from generators._rng import generation_scope
 from generators.allergy_gen import generate_allergies_for_patient
 from generators.appointment_gen import generate_appointment
 from generators.care_plan_gen import generate_care_plan
@@ -87,13 +87,35 @@ def generate_cohort(
     num_organizations: int = 1,
     years: int = 2,
 ) -> dict:
-    """Returns a dict of raw lists keyed by resource type, ready for mapping.
+    """Generate a full relational cohort as a dict of raw lists per resource type.
+
+    Runs inside `generation_scope` so that seeded output stays reproducible even
+    when multiple generations run concurrently.
 
     Raises ValueError if condition_filter matches no known condition.
     """
-    if seed is not None:
-        seed_all(seed)
+    with generation_scope(seed):
+        return _build_cohort(
+            count=count,
+            age_min=age_min,
+            age_max=age_max,
+            condition_filter=condition_filter,
+            num_practitioners=num_practitioners,
+            num_organizations=num_organizations,
+            years=years,
+        )
 
+
+def _build_cohort(
+    count: int,
+    age_min: int,
+    age_max: int,
+    condition_filter: str | None,
+    num_practitioners: int,
+    num_organizations: int,
+    years: int,
+) -> dict:
+    """Build the cohort. Assumes the caller holds the generation scope."""
     # Step 1 - infrastructure
     organizations = [generate_organization() for _ in range(num_organizations)]
     org_ids = [o["id"] for o in organizations]

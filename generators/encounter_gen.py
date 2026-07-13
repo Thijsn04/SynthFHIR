@@ -61,9 +61,14 @@ def generate_encounter(
         k=1,
     )[0]
 
-    now = datetime.now(UTC)
+    # Anchor to today's date at midnight so the time of day is drawn from the
+    # seeded RNG only. Using the raw wall clock would leak the current second
+    # into the encounter datetimes and break seeded reproducibility.
+    today = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     days_ago = random.randint(max(1, days_ago_min), max(2, days_ago_max))
-    start = now - timedelta(days=days_ago, hours=random.randint(8, 17), minutes=random.randint(0, 59))
+    start = today - timedelta(days=days_ago) + timedelta(
+        hours=random.randint(8, 17), minutes=random.randint(0, 59)
+    )
     end = start + timedelta(minutes=random.randint(15, 60))
 
     # Build reasonCode from active conditions (up to 2)
