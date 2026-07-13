@@ -1,6 +1,6 @@
 """FamilyMemberHistory generator.
 
-Generates hereditary condition history for 1–3 family members of a patient.
+Generates hereditary condition history for 1-3 family members of a patient.
 Conditions are drawn from a catalog of heritable diseases. Relationships use
 HL7 v3 RoleCode values.
 
@@ -27,7 +27,7 @@ _HEREDITARY_CONDITIONS: list[tuple[str, str, str]] = [
     ("396275006", "M19.90",  "Osteoarthritis"),
 ]
 
-# (HL7 v3 RoleCode, display, sex — None means random)
+# (HL7 v3 RoleCode, display, sex - None means random)
 _RELATIONSHIPS: list[tuple[str, str, str | None]] = [
     ("FTH",  "father",               "male"),
     ("MTH",  "mother",               "female"),

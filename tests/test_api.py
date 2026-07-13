@@ -215,7 +215,7 @@ class TestCatalogEndpoints:
 
 
 # ---------------------------------------------------------------------------
-# Phase 3 — /api/metadata CapabilityStatement
+# Phase 3 - /api/metadata CapabilityStatement
 # ---------------------------------------------------------------------------
 
 class TestMetadataEndpoint:
@@ -261,7 +261,7 @@ class TestMetadataEndpoint:
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 — Temporal Depth
+# Phase 4 - Temporal Depth
 # ---------------------------------------------------------------------------
 
 class TestYearsParameter:

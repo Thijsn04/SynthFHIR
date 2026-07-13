@@ -9,7 +9,7 @@ import uuid
 
 from faker import Faker
 
-# Single shared Faker instance — seeded via Faker.seed() in seed_all()
+# Single shared Faker instance - seeded via Faker.seed() in seed_all()
 fake = Faker("en_US")
 
 
@@ -20,7 +20,7 @@ def seed_all(seed: int) -> None:
 
 
 def new_uuid() -> str:
-    """UUID4 generated from Python's seeded random — reproducible with seed_all()."""
+    """UUID4 generated from Python's seeded random - reproducible with seed_all()."""
     return str(uuid.UUID(int=random.getrandbits(128), version=4))
 
 

@@ -9,7 +9,7 @@ def map_practitioner(p: dict, us_core: bool = False) -> dict:
         "resourceType": "Practitioner",
         "id": p["id"],
         "meta": build_meta(US_CORE_PROFILES["Practitioner"] if us_core else _PROFILE),
-        # US Core Practitioner requires identifier:NPI — always present
+        # US Core Practitioner requires identifier:NPI - always present
         "identifier": [{"system": "http://hl7.org/fhir/sid/us-npi", "value": p["npi"]}],
         "active": True,
         "name": [

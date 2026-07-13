@@ -4,7 +4,7 @@
 
 **A free, locally-hosted synthetic FHIR patient-data generator**
 
-Produces fully relational clinical datasets with realistic, interconnected records across **15 resource types**, all linked by ID and conformant to FHIR R4/R5 and US Core profiles. Built with [Faker](https://faker.readthedocs.io/) — no external APIs, no paid services, runs entirely on your machine.
+Produces fully relational clinical datasets with realistic, interconnected records across **25 resource types**, all linked by ID and conformant to FHIR R4/R5 and US Core profiles. Built with [Faker](https://faker.readthedocs.io/) with no external APIs, no paid services, and runs entirely on your machine.
 
 [![CI](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml/badge.svg)](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
@@ -40,8 +40,8 @@ curl "http://localhost:8000/api/generate/cohort?count=5&profile=us-core"
 curl "http://localhost:8000/api/conditions"
 ```
 
-Interactive docs (Swagger UI): `http://localhost:8000/docs`  
-Test UI: open `test_ui.html` in a browser.
+Web console: `http://localhost:8000/` (served by the app: configure, generate, preview, and download datasets)  
+Interactive API docs (Swagger UI): `http://localhost:8000/docs`
 
 ---
 
@@ -70,7 +70,7 @@ All resources reference each other by FHIR `urn:uuid:` IDs that match the Bundle
 
 ### Blood pressure
 
-Blood pressure is generated as a **panel Observation** (LOINC `85354-9`) with systolic and diastolic as `component` entries — matching the US Core Blood Pressure Profile — rather than two separate Observations.
+Blood pressure is generated as a **panel Observation** (LOINC `85354-9`) with systolic and diastolic as `component` entries - matching the US Core Blood Pressure Profile - rather than two separate Observations.
 
 ---
 
@@ -83,7 +83,7 @@ Blood pressure is generated as a **panel Observation** (LOINC `85354-9`) with sy
 - `referenceRange` on all lab and vital Observations (derived from catalog normal ranges)
 - Interpretation flags (`H`/`L`) only emitted when a value is outside the reference range
 - US Core Blood Pressure Profile (`component`-based panel)
-- `valueInteger` for survey scores (PHQ-9, GAD-7) — not `valueQuantity`
+- `valueInteger` for survey scores (PHQ-9, GAD-7) - not `valueQuantity`
 - Pulse oximetry uses LOINC `59408-5` (not the arterial blood gas code)
 - US Core extensions for race, ethnicity, and birth sex via `?profile=us-core`
 - Transaction bundles with `entry.request` via `?bundle_type=transaction`
@@ -105,14 +105,14 @@ Generates a complete, interconnected clinical cohort.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `count` | int (1–1000) | 10 | Number of patients |
+| `count` | int (1-1000) | 10 | Number of patients |
 | `version` | `R4` \| `R5` | `R4` | FHIR version |
-| `age_min` | int (0–119) | 0 | Minimum patient age |
-| `age_max` | int (1–120) | 80 | Maximum patient age |
-| `condition` | string | — | Filter by condition key or partial name (e.g. `diabetes`, `hypertension`) |
-| `seed` | int | — | RNG seed for fully reproducible output |
-| `num_practitioners` | int (1–50) | 3 | Number of practitioners in the pool |
-| `num_organizations` | int (1–10) | 1 | Number of organizations in the pool |
+| `age_min` | int (0-119) | 0 | Minimum patient age |
+| `age_max` | int (1-120) | 80 | Maximum patient age |
+| `condition` | string | - | Filter by condition key or partial name (e.g. `diabetes`, `hypertension`) |
+| `seed` | int | - | RNG seed for fully reproducible output |
+| `num_practitioners` | int (1-50) | 3 | Number of practitioners in the pool |
+| `num_organizations` | int (1-10) | 1 | Number of organizations in the pool |
 | `bundle_type` | `collection` \| `transaction` | `collection` | `transaction` adds `entry.request` for direct server ingestion |
 | `format` | `bundle` \| `ndjson` | `bundle` | `ndjson` streams one resource per line |
 | `profile` | `base` \| `us-core` | `base` | `us-core` adds race, ethnicity, and birth-sex extensions to Patient |
@@ -123,11 +123,11 @@ Generates lightweight Patient resources with no linked clinical data.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `count` | int (1–100) | 1 | Number of patients |
+| `count` | int (1-100) | 1 | Number of patients |
 | `version` | `R4` \| `R5` | `R4` | FHIR version |
-| `age_min` | int (0–119) | 0 | Minimum age |
-| `age_max` | int (1–120) | 100 | Maximum age |
-| `seed` | int | — | RNG seed |
+| `age_min` | int (0-119) | 0 | Minimum age |
+| `age_max` | int (1-120) | 100 | Maximum age |
+| `seed` | int | - | RNG seed |
 | `bundle_type` | `collection` \| `transaction` | `collection` | Bundle type |
 | `profile` | `base` \| `us-core` | `base` | US Core extensions |
 
@@ -137,9 +137,9 @@ Generates standalone Practitioner resources.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `count` | int (1–100) | 1 | Number of practitioners |
+| `count` | int (1-100) | 1 | Number of practitioners |
 | `version` | `R4` \| `R5` | `R4` | FHIR version |
-| `seed` | int | — | RNG seed |
+| `seed` | int | - | RNG seed |
 | `bundle_type` | `collection` \| `transaction` | `collection` | Bundle type |
 
 #### `GET /api/generate/organization`
@@ -148,9 +148,9 @@ Generates standalone Organization resources.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `count` | int (1–50) | 1 | Number of organizations |
+| `count` | int (1-50) | 1 | Number of organizations |
 | `version` | `R4` \| `R5` | `R4` | FHIR version |
-| `seed` | int | — | RNG seed |
+| `seed` | int | - | RNG seed |
 | `bundle_type` | `collection` \| `transaction` | `collection` | Bundle type |
 
 ### Catalog
@@ -225,7 +225,7 @@ SynthFHIR/
 │   ├── test_generators.py
 │   ├── test_mappers.py
 │   └── test_api.py
-└── test_ui.html                   # Browser-based test interface
+└── web/                           # Static web console (index.html, styles.css, app.js)
 ```
 
 The data flow is:
@@ -285,7 +285,7 @@ Adding a completely new resource type requires four steps:
 
 1. **Create a generator** in `generators/` returning a plain dict with all raw fields needed.
 
-2. **Add catalog data if needed** — fixed code sets go in `data/` following the `ConditionDef` / `MedicationDef` / `ProcedureDef` pattern.
+2. **Add catalog data if needed** - fixed code sets go in `data/` following the `ConditionDef` / `MedicationDef` / `ProcedureDef` pattern.
 
 3. **Create mappers** in `mappers/r4/` and `mappers/r5/`. Use helpers from `mappers/_helpers.py` for shared FHIR primitives (`ref()`, `build_meta()`, `build_address()`, etc.).
 
@@ -298,7 +298,7 @@ Adding a completely new resource type requires four steps:
 ## Requirements
 
 - Python 3.11+
-- See [requirements.txt](requirements.txt) — FastAPI, Uvicorn, Faker, Pydantic v2
+- See [requirements.txt](requirements.txt) - FastAPI, Uvicorn, Faker, Pydantic v2
 
 ---
 

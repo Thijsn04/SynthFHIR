@@ -4,7 +4,7 @@ Generates lab/imaging/referral orders linked to an encounter. Each active
 condition contributes 1 condition-appropriate order. A general health
 maintenance order is always included.
 
-Each ServiceRequest includes a `produces_obs_keys` list — the observation catalog
+Each ServiceRequest includes a `produces_obs_keys` list - the observation catalog
 keys that this order is expected to produce. cohort_gen.py uses this to populate
 the basedOn reference on the generated Observation resources.
 
@@ -307,7 +307,7 @@ def generate_service_requests_for_encounter(
     conditions: list[dict],
     authored_on: str | None = None,
 ) -> list[dict]:
-    """Return 1–3 ServiceRequest records for the given encounter."""
+    """Return 1-3 ServiceRequest records for the given encounter."""
     if authored_on is None:
         days_ago = random.randint(0, 30)
         authored_on = (date.today() - timedelta(days=days_ago)).strftime("%Y-%m-%d")

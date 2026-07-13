@@ -134,7 +134,7 @@ class TestReferentialIntegrity:
             and entry["resource"].get("basedOn")
         ]
         assert len(obs_with_basedOn) > 0, (
-            "No Observations have a basedOn reference — ServiceRequest linkage is not working"
+            "No Observations have a basedOn reference - ServiceRequest linkage is not working"
         )
 
     @pytest.mark.parametrize("seed", [1, 10, 100, 1000])

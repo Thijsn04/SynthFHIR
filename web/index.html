@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SynthFHIR Console</title>
+  <meta name="description" content="Generate realistic synthetic FHIR patient data locally. No external APIs." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AC%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">&#129516;</span>
+      <span class="name">Synth<b>FHIR</b></span>
+    </div>
+    <div class="header-spacer"></div>
+    <div class="status" role="status" aria-live="polite">
+      <span class="dot checking" id="statusDot"></span>
+      <span id="statusLabel">checking</span>
+    </div>
+    <nav class="header-links" aria-label="Utilities">
+      <a class="icon-link" id="docsLink" href="/docs" title="API documentation" aria-label="API documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </a>
+      <button class="icon-link" id="themeToggle" title="Toggle theme" aria-label="Toggle color theme">
+        <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <section class="intro">
+    <h1>Synthetic FHIR data, generated locally</h1>
+    <p>Build fully relational clinical cohorts conformant to FHIR R4 and R5. Configure a dataset, generate it, then preview and download. Everything runs on your machine with no external services.</p>
+  </section>
+
+  <div class="workspace">
+
+    <!-- Configuration -->
+    <form class="card" id="configCard" autocomplete="off">
+      <div class="card-head">
+        <h2>Configuration</h2>
+        <span class="sub" id="endpointLabel">/api/generate/cohort</span>
+      </div>
+      <div class="card-body config-form">
+
+        <div class="field-group">
+          <div class="group-title">Dataset</div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="count">Patients</label>
+              <input type="number" id="count" min="1" max="1000" value="10" />
+            </div>
+            <div class="field">
+              <label id="lbl-version">FHIR version</label>
+              <div class="segmented" role="group" aria-labelledby="lbl-version" data-field="version">
+                <button type="button" data-value="R4" aria-pressed="true">R4</button>
+                <button type="button" data-value="R5" aria-pressed="false">R5</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-title">Demographics</div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="age_min">Min age</label>
+              <input type="number" id="age_min" min="0" max="119" value="0" />
+            </div>
+            <div class="field">
+              <label for="age_max">Max age</label>
+              <input type="number" id="age_max" min="1" max="120" value="80" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-title">Clinical</div>
+          <div class="field">
+            <label for="condition">Condition focus</label>
+            <div class="select-wrap">
+              <select id="condition">
+                <option value="">Any condition</option>
+              </select>
+            </div>
+            <span class="hint" id="conditionHint">Every patient gets at least this condition plus plausible comorbidities.</span>
+          </div>
+          <div class="field">
+            <label for="years">Years of history</label>
+            <input type="number" id="years" min="1" max="20" value="2" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-title">Care network</div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="num_practitioners">Practitioners</label>
+              <input type="number" id="num_practitioners" min="1" max="50" value="3" />
+            </div>
+            <div class="field">
+              <label for="num_organizations">Organizations</label>
+              <input type="number" id="num_organizations" min="1" max="10" value="1" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-title">Output</div>
+          <div class="field">
+            <label id="lbl-format">Format</label>
+            <div class="segmented" role="group" aria-labelledby="lbl-format" data-field="format">
+              <button type="button" data-value="bundle" aria-pressed="true">Bundle</button>
+              <button type="button" data-value="ndjson" aria-pressed="false">NDJSON</button>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label id="lbl-bundle_type">Bundle type</label>
+              <div class="segmented" role="group" aria-labelledby="lbl-bundle_type" data-field="bundle_type">
+                <button type="button" data-value="collection" aria-pressed="true">Collection</button>
+                <button type="button" data-value="transaction" aria-pressed="false">Transaction</button>
+              </div>
+            </div>
+            <div class="field">
+              <label id="lbl-profile">Profile</label>
+              <div class="segmented" role="group" aria-labelledby="lbl-profile" data-field="profile">
+                <button type="button" data-value="base" aria-pressed="true">Base</button>
+                <button type="button" data-value="us-core" aria-pressed="false">US Core</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="seed">Seed <span class="hint">(optional, for reproducible output)</span></label>
+            <input type="number" id="seed" min="0" placeholder="none" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="generateBtn">Generate</button>
+          <button type="button" class="btn btn-ghost" id="resetBtn">Reset</button>
+        </div>
+
+        <details class="advanced">
+          <summary>Advanced</summary>
+          <div class="field" style="margin-top:8px">
+            <label for="baseUrl">API base URL</label>
+            <input type="text" id="baseUrl" value="" placeholder="same origin" />
+            <span class="hint">Leave empty to use this page's origin. Set when opening the file directly.</span>
+          </div>
+        </details>
+
+      </div>
+    </form>
+
+    <!-- Result -->
+    <section class="card" id="resultCard" aria-live="polite">
+      <div class="result-toolbar">
+        <span class="pill" id="statusPill">Idle</span>
+        <div class="metrics" id="metrics" hidden>
+          <span><b id="mTime">0</b> ms</span>
+          <span><b id="mSize">0</b> KB</span>
+          <span><b id="mCount">0</b> resources</span>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-ghost" id="copyBtn" hidden>Copy</button>
+        <button class="btn btn-ghost" id="downloadBtn" hidden>Download</button>
+      </div>
+
+      <div class="tabs" role="tablist" id="tabs" hidden>
+        <button class="tab" role="tab" aria-selected="true" data-tab="summary" id="tab-summary">Summary</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="preview" id="tab-preview">Preview</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="resources" id="tab-resources">Resources</button>
+      </div>
+
+      <div class="panels">
+        <div class="empty" id="emptyState">
+          <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.58 16.5h12.85"/></svg>
+          <div class="t">No dataset yet</div>
+          <div class="s">Configure the options and select Generate.</div>
+        </div>
+
+        <div class="panel" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary">
+          <div class="summary">
+            <div class="summary-total"><span class="n" id="totalCount">0</span><span class="l">resources across <span id="typeCount">0</span> types</span></div>
+            <div class="rtable" id="rtable"></div>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-preview" role="tabpanel" aria-labelledby="tab-preview">
+          <div class="code-scroll"><pre class="code" id="previewCode"></pre></div>
+        </div>
+
+        <div class="panel" id="panel-resources" role="tabpanel" aria-labelledby="tab-resources">
+          <div class="rlist" id="rlist"></div>
+        </div>
+
+        <div class="err-box" id="errBox" hidden></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>SynthFHIR</span>
+    <span class="dot-sep">&bull;</span>
+    <a href="/docs">API docs</a>
+    <a href="/api/conditions">Conditions catalog</a>
+    <a href="/api/observations">Observations catalog</a>
+    <span class="footer-spacer"></span>
+    <span>MIT licensed</span>
+    <span class="dot-sep">&bull;</span>
+    <a href="https://github.com/Thijsn04/SynthFHIR" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

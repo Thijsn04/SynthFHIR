@@ -208,7 +208,7 @@ class TestR4BundleBuilder:
 
 
 # ---------------------------------------------------------------------------
-# R5 mappers — spot checks on R5-specific structural differences
+# R5 mappers - spot checks on R5-specific structural differences
 # ---------------------------------------------------------------------------
 
 class TestR5EncounterMapper:
@@ -485,7 +485,7 @@ class TestR5CarePlanActivities:
 
 
 # ---------------------------------------------------------------------------
-# Phase 3 — US Core conformance tests
+# Phase 3 - US Core conformance tests
 # ---------------------------------------------------------------------------
 
 _US_CORE_BASE = "http://hl7.org/fhir/us/core/StructureDefinition"
@@ -682,7 +682,7 @@ class TestUSCorePractitioner:
 
 
 # ---------------------------------------------------------------------------
-# Phase 4 mappers — Appointment and EpisodeOfCare
+# Phase 4 mappers - Appointment and EpisodeOfCare
 # ---------------------------------------------------------------------------
 
 class TestR4AppointmentMapper:
@@ -705,7 +705,7 @@ class TestR4AppointmentMapper:
         assert self.resource["status"] == "fulfilled"
 
     def test_patient_participant(self):
-        # References use urn:uuid: format — check by matching patient_id
+        # References use urn:uuid: format - check by matching patient_id
         patient_id = self.appt["patient_id"]
         actor_refs = [p["actor"]["reference"] for p in self.resource["participant"]]
         assert any(patient_id in r for r in actor_refs)
@@ -768,7 +768,7 @@ class TestR4EpisodeOfCareMapper:
         assert "patient" in self.resource
 
     def test_patient_reference(self):
-        # References use urn:uuid: format — check by ID
+        # References use urn:uuid: format - check by ID
         assert self.eoc["patient_id"] in self.resource["patient"]["reference"]
 
     def test_managing_organization(self):

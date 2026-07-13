@@ -6,7 +6,7 @@ respiratory rate, body temperature). Active conditions contribute their linked
 observation types, and values are biased toward the abnormal range.
 
 Key improvements over v1:
-- Triangular distribution instead of uniform — values cluster realistically.
+- Triangular distribution instead of uniform - values cluster realistically.
 - Per-patient baseline (obs_baseline from patient dict) ensures longitudinal
   consistency: the same patient's BP stays in a similar range across visits.
 - Height is taken from the patient baseline; body_weight uses a stable baseline
@@ -35,7 +35,7 @@ _BP_PANEL_DISPLAY = "Blood pressure panel with all children optional"
 # Fraction of the (normal or abnormal) range used as per-encounter jitter
 _BASELINE_JITTER_FRACTION = 0.08
 
-# Per-encounter weight jitter in kg — small bounded perturbation around the
+# Per-encounter weight jitter in kg - small bounded perturbation around the
 # patient's stable weight baseline (reflects real-world between-visit variability).
 _WEIGHT_JITTER_KG = 1.5
 
@@ -128,7 +128,7 @@ def generate_observations_for_encounter(
     Height is always recorded; weight uses the stable baseline with small jitter;
     BMI is derived from weight and height.
 
-    enc_index / num_encounters / years: used to compute longitudinal drift —
+    enc_index / num_encounters / years: used to compute longitudinal drift -
     lab values drift realistically across the patient timeline (e.g. HbA1c
     rises without treatment intensification, eGFR declines in CKD).
 
@@ -151,7 +151,7 @@ def generate_observations_for_encounter(
                 active_cond_keys.add(ck)
 
     # Build a drifted baseline for this specific encounter position.
-    # We do NOT mutate obs_baseline in-place — drift is always relative to the
+    # We do NOT mutate obs_baseline in-place - drift is always relative to the
     # original patient baseline so values don't compound across encounters.
     if obs_baseline is not None and years_elapsed > 0:
         eff_baseline: dict = dict(obs_baseline)
@@ -201,7 +201,7 @@ def generate_observations_for_encounter(
             result.append(obs)
             continue
 
-        # BMI: skip here — appended after weight is known
+        # BMI: skip here - appended after weight is known
         if key == "bmi":
             continue
 

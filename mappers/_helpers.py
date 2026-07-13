@@ -54,7 +54,7 @@ US_CORE_PROFILES: dict[str, str] = {
 
 
 def build_patient_name(patient: dict) -> dict:
-    """HumanName — family + given array + optional prefix/suffix."""
+    """HumanName - family + given array + optional prefix/suffix."""
     entry: dict = {
         "use": "official",
         "family": patient["last_name"],

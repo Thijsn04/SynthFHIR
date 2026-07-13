@@ -1,6 +1,6 @@
 """R4 Condition resource mapper. Spec: https://hl7.org/fhir/R4/condition.html
 
-US Core: two profiles depending on category —
+US Core: two profiles depending on category -
   problem-list-item   → us-core-condition-problems-health-concerns
   encounter-diagnosis → us-core-condition-encounter-diagnosis
 """

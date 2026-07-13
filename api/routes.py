@@ -66,7 +66,7 @@ from mappers.r5 import service_request as r5_service_request
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Mapper dispatch tables — indexed by FHIR version string
+# Mapper dispatch tables - indexed by FHIR version string
 # ---------------------------------------------------------------------------
 _PATIENT_MAPPER    = {"R4": r4_patient.map_patient,                          "R5": r5_patient.map_patient}
 _PRAC_MAPPER       = {"R4": r4_practitioner.map_practitioner,                "R5": r5_practitioner.map_practitioner}
@@ -209,14 +209,14 @@ async def generate_cohort_endpoint(
     age_max: Annotated[int, Query(ge=1, le=120, description="Maximum patient age")] = 80,
     condition: Annotated[
         str | None,
-        Query(description="Condition filter — partial name or key, e.g. 'diabetes', 'hypertension'"),
+        Query(description="Condition filter - partial name or key, e.g. 'diabetes', 'hypertension'"),
     ] = None,
     seed: Annotated[int | None, Query(description="RNG seed for fully reproducible output")] = None,
     num_practitioners: Annotated[int, Query(ge=1, le=50)] = 3,
     num_organizations: Annotated[int, Query(ge=1, le=10)] = 1,
     years: Annotated[
         int,
-        Query(ge=1, le=20, description="Years of clinical history to generate per patient (1–20)"),
+        Query(ge=1, le=20, description="Years of clinical history to generate per patient (1-20)"),
     ] = 2,
     bundle_type: Annotated[
         Literal["collection", "transaction"],
@@ -240,7 +240,7 @@ async def generate_cohort_endpoint(
     under DiagnosticReport resources, and MedicationRequests for active
     conditions.
 
-    Use **seed** to get fully reproducible datasets across runs — useful for
+    Use **seed** to get fully reproducible datasets across runs - useful for
     CI pipelines and regression testing.
     """
     _validate_age_range(age_min, age_max)
@@ -406,7 +406,7 @@ _US_CORE_BASE = "http://hl7.org/fhir/us/core/StructureDefinition"
 @router.get(
     "/metadata",
     tags=["Conformance"],
-    summary="FHIR CapabilityStatement — describes what this server supports",
+    summary="FHIR CapabilityStatement - describes what this server supports",
 )
 def capability_statement(
     version: Annotated[Literal["R4", "R5"], Query(description="FHIR version")] = "R4",
