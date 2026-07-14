@@ -48,7 +48,7 @@ dev = [
 synthfhir = "cli:main"
 
 [tool.setuptools]
-py-modules = ["main", "cli", "synthfhir"]
+py-modules = ["main", "cli", "synthfhir", "clock", "config"]
 
 [tool.setuptools.packages.find]
 include = ["api*", "data*", "generators*", "mappers*", "validation*"]
