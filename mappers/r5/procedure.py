@@ -3,8 +3,7 @@
 R5 differences from R4:
   1. Profile URL uses 5.0 path segment.
   2. Procedure.category changed from CodeableConcept to list[CodeableConcept].
-  3. Procedure.performer.actor type broadened (Reference → CodeableReference) but
-     a plain Reference is still valid.
+  3. performed[x] was renamed to occurrence[x].
 """
 from mappers._helpers import build_meta, ref
 
@@ -42,7 +41,8 @@ def map_procedure(proc: dict, us_core: bool = False) -> dict:
         },
         "subject": ref("Patient", proc["patient_id"]),
         "encounter": ref("Encounter", proc["encounter_id"]),
-        "performedDateTime": proc["performed_datetime"],
+        # R5 renamed performed[x] to occurrence[x]
+        "occurrenceDateTime": proc["performed_datetime"],
         "performer": [
             {"actor": ref("Practitioner", proc["practitioner_id"])}
         ],

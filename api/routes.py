@@ -347,8 +347,13 @@ _RESOURCE_TYPES = [
     "Patient", "Practitioner", "PractitionerRole", "Organization", "Location",
     "RelatedPerson", "Condition", "AllergyIntolerance", "Immunization", "Coverage",
     "Encounter", "Appointment", "EpisodeOfCare", "Observation", "DiagnosticReport",
-    "DocumentReference", "MedicationRequest", "MedicationDispense", "Procedure",
-    "ServiceRequest", "CareTeam", "CarePlan", "Goal", "List",
+    "Specimen", "ImagingStudy", "QuestionnaireResponse",
+    "DocumentReference", "Medication", "MedicationRequest", "MedicationDispense",
+    "MedicationStatement", "MedicationAdministration", "Procedure",
+    "ServiceRequest", "Device", "BodyStructure", "Flag", "RiskAssessment",
+    "ClinicalImpression", "Account", "Claim", "ExplanationOfBenefit",
+    "NutritionOrder", "Task", "Communication", "Schedule", "Slot",
+    "Composition", "Group", "CareTeam", "CarePlan", "Goal", "List",
     "FamilyMemberHistory", "Consent", "Provenance",
 ]
 
@@ -414,7 +419,7 @@ def capability_statement(
         "kind": "instance",
         "software": {
             "name": "SynthFHIR",
-            "version": "0.4.0",
+            "version": "0.6.0",
         },
         "fhirVersion": fhir_version,
         "format": ["application/fhir+json"],

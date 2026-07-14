@@ -806,6 +806,7 @@ class TestR5EpisodeOfCareMapper:
         if self.eoc.get("condition_ids"):
             assert "diagnosis" in self.resource
             diag = self.resource["diagnosis"][0]
-            # R5: CodeableReference wraps Reference inside .reference
-            assert "reference" in diag["condition"]
-            assert "urn:uuid:" in diag["condition"]["reference"]["reference"]
+            # R5: condition is a list of CodeableReference, each wrapping a Reference
+            assert isinstance(diag["condition"], list)
+            assert "urn:uuid:" in diag["condition"][0]["reference"]["reference"]
+            assert "rank" not in diag

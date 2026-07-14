@@ -28,16 +28,9 @@ def map_care_plan(cp: dict, us_core: bool = False) -> dict:
         ],
     }
 
+    # R5 removed CarePlan.activity.detail. Capture each planned activity as a
+    # progress annotation, which is the conformant place for free text.
     if cp.get("activities"):
-        resource["activity"] = [
-            {
-                "plannedActivityDetail": {
-                    "kind": "ServiceRequest",
-                    "status": "not-started",
-                    "description": act,
-                }
-            }
-            for act in cp["activities"]
-        ]
+        resource["activity"] = [{"progress": [{"text": act}]} for act in cp["activities"]]
 
     return resource

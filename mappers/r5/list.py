@@ -1,6 +1,6 @@
 """R5 List resource mapper. Spec: https://hl7.org/fhir/R5/list.html
 
-R5 is structurally identical to R4 for List; only the profile URL differs.
+R5 difference from R4: List.subject is now a list of References.
 """
 from mappers._helpers import build_meta, ref, utcnow
 
@@ -25,7 +25,7 @@ def map_list(lst: dict, us_core: bool = False) -> dict:
             ],
             "text": lst["code_display"],
         },
-        "subject": ref("Patient", lst["patient_id"]),
+        "subject": [ref("Patient", lst["patient_id"])],
         "date": utcnow(),
         "entry": [
             {"item": ref(lst["entry_resource_type"], eid)}

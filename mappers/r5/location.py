@@ -1,6 +1,7 @@
 """R5 Location resource mapper. Spec: https://hl7.org/fhir/R5/location.html
 
-R5 is structurally identical to R4 for Location; only the profile URL differs.
+R5 difference from R4: Location.telecom was removed and folded into
+Location.contact (an ExtendedContactDetail). Location.address stays.
 """
 from mappers._helpers import build_meta, ref
 
@@ -26,7 +27,7 @@ def map_location(loc: dict, us_core: bool = False) -> dict:
                 "text": loc["type_display"],
             }
         ],
-        "telecom": [{"system": "phone", "value": loc["phone"], "use": "work"}],
+        "contact": [{"telecom": [{"system": "phone", "value": loc["phone"], "use": "work"}]}],
         "address": {
             "use": "work",
             "line": [loc["address_line"]],

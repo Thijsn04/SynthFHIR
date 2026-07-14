@@ -18,7 +18,7 @@ web console. It never contacts external services and stores no data.
 ## Concepts
 
 - [Architecture](architecture.md): how the layers fit together.
-- [FHIR resources](resources.md): the 27 resource types and their codings.
+- [FHIR resources](resources.md): the 48 resource types and their codings.
 - [Catalogs](catalogs.md): conditions, observations, medications, and how to extend them.
 - [Reproducibility](reproducibility.md): what a seed guarantees.
 - [Validation](validation.md): the built-in bundle validator.

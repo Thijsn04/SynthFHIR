@@ -3,6 +3,54 @@
 All notable changes to this project are documented here. The format is based on
 Keep a Changelog, and this project adheres to semantic versioning.
 
+## [0.6.0]
+
+### Added
+
+- Strict FHIR conformance testing: every generated resource is validated against
+  the real FHIR StructureDefinitions via the `fhir.resources` models (R4B for R4,
+  R5 for R5), covering base and US Core cohorts and transaction bundles, and run
+  in CI. All 48 resource types now pass strict validation in both versions.
+
+### Fixed
+
+- Conformance fixes surfaced by the strict validation, including several
+  pre-existing R5 mapper bugs:
+  - `Money` no longer carries `system`/`code` (Claim, ExplanationOfBenefit).
+  - R5 Procedure uses `occurrenceDateTime` (was `performedDateTime`).
+  - R5 Organization and Location move `telecom`/`address` into `contact`.
+  - R5 Coverage `class.value` is an Identifier.
+  - R5 CareTeam `participant.role` is a single CodeableConcept.
+  - R5 CarePlan drops the removed `activity.detail`.
+  - R5 Encounter `reason` uses `value` (CodeableReference).
+  - R5 EpisodeOfCare `diagnosis.condition` is a list and drops `rank`.
+  - R5 List and Composition `subject` are lists.
+  - R5 Communication payload uses `contentCodeableConcept`.
+  - R5 MedicationAdministration `performer.actor` is a CodeableReference.
+  - Device `udiCarrier.issuer` is populated (required in R5).
+
+## [0.5.0]
+
+### Added
+
+- Expanded from 27 to **48 FHIR resource types**, each in R4 and R5, wired into
+  the pipeline, the CapabilityStatement, and the validator:
+  - Diagnostics: Specimen, ImagingStudy, QuestionnaireResponse, Composition.
+  - Medications: Medication, MedicationStatement, MedicationAdministration.
+  - Devices and assessment: Device, BodyStructure, Flag, RiskAssessment,
+    ClinicalImpression.
+  - Financial: Account, Claim, ExplanationOfBenefit.
+  - Workflow and scheduling: Task, NutritionOrder, Communication, Schedule,
+    Slot, Group.
+- Broad resource-coverage tests, including a reference-resolution check across
+  the whole set in R4 and R5.
+
+### Changed
+
+- Version bumped to 0.5.0. Documentation (resources, roadmap, README) updated to
+  cover the expanded resource set and to record which FHIR infrastructure
+  resources are intentionally out of scope.
+
 ## [0.4.0]
 
 ### Added
