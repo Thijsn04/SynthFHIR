@@ -8,48 +8,42 @@ questions: does US Core require it, and does it appear often in real datasets.
 Each addition follows the same four-step pattern (generator, optional catalog
 data, R4 and R5 mappers, pipeline wiring). See [Architecture](architecture.md).
 
-## Recently added
+## Recently added (48 resource types total)
 
-- **DocumentReference**: a clinical note per encounter. US Core mandatory.
-- **MedicationDispense**: pharmacy fills for prescriptions. US Core v6.
+Across several releases SynthFHIR grew from 27 to 48 resource types: Specimen,
+ImagingStudy, QuestionnaireResponse, DocumentReference, Composition, Medication,
+MedicationDispense, MedicationStatement, MedicationAdministration, Device,
+BodyStructure, Flag, RiskAssessment, ClinicalImpression, Account, Claim,
+ExplanationOfBenefit, Task, NutritionOrder, Communication, Schedule, Slot, and
+Group, each in R4 and R5.
 
-## High priority
+## Candidate additions
 
-These close US Core gaps and appear in almost every real dataset.
-
-| Resource | Why | Notes |
-|---|---|---|
-| **Specimen** | Referenced by lab Observations and DiagnosticReports | Blood, urine, swab; link from existing lab results |
-| **Medication** | US Core lets MedicationRequest reference a Medication resource | Promote the inline RxNorm coding to a standalone resource |
-| **MedicationStatement** | Patient-reported medication use, distinct from prescriptions | Reuse the medication catalog |
-| **Device** and **Implantable Device** | US Core Implantable Device profile | Pacemakers, stents, joint prostheses; link to Procedure |
-| **QuestionnaireResponse** | Model PHQ-9 and GAD-7 as structured responses | Pairs with the survey Observations already generated |
-| **ImagingStudy** | Radiology results | Link to the imaging ServiceRequests already generated |
-
-## Medium priority
-
-Common in claims, scheduling, and workflow data.
+Clinically relevant resource types not yet generated, in rough priority order:
 
 | Resource | Why |
 |---|---|
-| **Claim**, **ClaimResponse**, **ExplanationOfBenefit** | Payer and CARIN Blue Button style datasets; pair with the existing Coverage |
-| **Schedule** and **Slot** | Complete the scheduling story around Appointment |
-| **Task** | Workflow and referrals management |
-| **Flag** | Patient alerts (allergy, fall risk) |
-| **NutritionOrder** | Diet orders during encounters |
-| **Communication** | Messages between patients and providers |
-| **RiskAssessment** | Predicted risk scores tied to conditions |
-
-## Lower priority or specialized
-
-| Resource | Why |
-|---|---|
-| **BodyStructure** | Anatomical detail for procedures and imaging |
-| **Media** | Photos and scanned documents |
+| **ClaimResponse** | Complete the claim/adjudication pair alongside ExplanationOfBenefit |
+| **CommunicationRequest** | The order that precedes a Communication |
+| **DeviceRequest** and **DeviceUsage** | Ordering and use of the devices already modeled |
+| **AppointmentResponse** | Responses to the Appointments already generated |
+| **ImmunizationRecommendation** | Forecast alongside the Immunizations |
+| **VisionPrescription** | Optometry orders |
+| **SupplyRequest** and **SupplyDelivery** | Durable medical equipment |
+| **AdverseEvent** | Safety events tied to medications or procedures |
+| **Media** | Photos and scanned documents (folded into DocumentReference in R5) |
 | **MolecularSequence** | Genomics use cases |
-| **Group** | Cohort membership as a first-class resource |
-| **Composition** plus a document Bundle | Produce a FHIR Document (for example an IPS-style summary) |
-| **Basic** | Escape hatch for concepts without a dedicated resource |
+| **ChargeItem** and **Invoice** | Finer-grained billing |
+
+## Out of scope
+
+FHIR also defines many infrastructure and conformance resources that are not
+patient data and are intentionally not generated: CapabilityStatement (the
+server does emit its own at `/api/metadata`), StructureDefinition, ValueSet,
+CodeSystem, ConceptMap, SearchParameter, OperationDefinition, Subscription,
+MessageHeader, Parameters, Binary, and similar. A synthetic patient-data
+generator populates clinical and administrative resources, not the terminology
+and conformance layer.
 
 ## Cross-cutting realism work
 

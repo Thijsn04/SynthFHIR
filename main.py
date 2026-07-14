@@ -15,7 +15,7 @@ app = FastAPI(
         "organizations, conditions, allergies, encounters, and observations, all "
         "linked by ID. No external APIs. No paid services. Runs locally."
     ),
-    version="0.4.0",
+    version="0.5.0",
     license_info={"name": "MIT"},
 )
 

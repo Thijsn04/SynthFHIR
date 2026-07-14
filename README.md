@@ -4,7 +4,7 @@
 
 **A free, locally hosted synthetic FHIR patient-data generator**
 
-Generate fully relational clinical datasets across **27 FHIR resource types**, conformant to R4/R5 and US Core, all linked by ID. A REST API, a CLI, a Python library, and a clean web console. No external APIs, no paid services, runs entirely on your machine.
+Generate fully relational clinical datasets across **48 FHIR resource types**, conformant to R4/R5 and US Core, all linked by ID. A REST API, a CLI, a Python library, and a clean web console. No external APIs, no paid services, runs entirely on your machine.
 
 [![CI](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml/badge.svg)](https://github.com/Thijsn04/SynthFHIR/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
@@ -70,12 +70,23 @@ See [docs/python-library.md](docs/python-library.md).
 ## What gets generated
 
 A single cohort call returns a FHIR Bundle whose resources reference each other
-by `urn:uuid:` ids matching the Bundle `fullUrl` entries: Patient,
-Practitioner, PractitionerRole, Organization, Location, RelatedPerson,
-Condition, AllergyIntolerance, Immunization, Coverage, Encounter, Appointment,
-EpisodeOfCare, Observation, DiagnosticReport, DocumentReference,
-MedicationRequest, MedicationDispense, Procedure, ServiceRequest, CareTeam,
-CarePlan, Goal, List, FamilyMemberHistory, Consent, and Provenance.
+by `urn:uuid:` ids matching the Bundle `fullUrl` entries. Up to 48 resource
+types span every domain of a patient record:
+
+- People and organizations: Patient, Practitioner, PractitionerRole,
+  Organization, Location, RelatedPerson, Group.
+- Clinical: Condition, AllergyIntolerance, Immunization, FamilyMemberHistory,
+  Procedure, ClinicalImpression, RiskAssessment, Flag, BodyStructure.
+- Encounters and coordination: Encounter, Appointment, EpisodeOfCare, CareTeam,
+  CarePlan, Goal, ServiceRequest, Task, Communication, Schedule, Slot.
+- Results and documents: Observation, DiagnosticReport, Specimen, ImagingStudy,
+  QuestionnaireResponse, DocumentReference, Composition.
+- Medications: Medication, MedicationRequest, MedicationDispense,
+  MedicationStatement, MedicationAdministration, NutritionOrder, Device.
+- Coverage and billing: Coverage, Account, Claim, ExplanationOfBenefit.
+- Records: Consent, Provenance, List.
+
+See [docs/resources.md](docs/resources.md) for what each carries.
 
 Real terminology throughout: SNOMED CT and ICD-10 on conditions, LOINC and UCUM
 on observations, RxNorm on medications, CVX on immunizations. Clinically
@@ -106,7 +117,7 @@ Full documentation lives in [docs/](docs/README.md):
 | [CLI](docs/cli.md) | The `synthfhir` command |
 | [Python library](docs/python-library.md) | Use it from your own code |
 | [Architecture](docs/architecture.md) | How the layers fit together |
-| [FHIR resources](docs/resources.md) | The 27 resource types and codings |
+| [FHIR resources](docs/resources.md) | The 48 resource types and codings |
 | [Catalogs](docs/catalogs.md) | Conditions, observations, and extending them |
 | [Reproducibility](docs/reproducibility.md) | What a seed guarantees |
 | [Validation](docs/validation.md) | The bundle validator |

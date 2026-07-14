@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The format is based on
 Keep a Changelog, and this project adheres to semantic versioning.
 
+## [0.5.0]
+
+### Added
+
+- Expanded from 27 to **48 FHIR resource types**, each in R4 and R5, wired into
+  the pipeline, the CapabilityStatement, and the validator:
+  - Diagnostics: Specimen, ImagingStudy, QuestionnaireResponse, Composition.
+  - Medications: Medication, MedicationStatement, MedicationAdministration.
+  - Devices and assessment: Device, BodyStructure, Flag, RiskAssessment,
+    ClinicalImpression.
+  - Financial: Account, Claim, ExplanationOfBenefit.
+  - Workflow and scheduling: Task, NutritionOrder, Communication, Schedule,
+    Slot, Group.
+- Broad resource-coverage tests, including a reference-resolution check across
+  the whole set in R4 and R5.
+
+### Changed
+
+- Version bumped to 0.5.0. Documentation (resources, roadmap, README) updated to
+  cover the expanded resource set and to record which FHIR infrastructure
+  resources are intentionally out of scope.
+
 ## [0.4.0]
 
 ### Added
