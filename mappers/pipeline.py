@@ -11,17 +11,21 @@ from collections.abc import Iterator
 
 from mappers.r4 import allergy as r4_allergy
 from mappers.r4 import appointment as r4_appointment
+from mappers.r4 import body_structure as r4_body_structure
 from mappers.r4 import bundle as r4_bundle
 from mappers.r4 import care_plan as r4_care_plan
 from mappers.r4 import care_team as r4_care_team
+from mappers.r4 import clinical_impression as r4_clinical_impression
 from mappers.r4 import condition as r4_condition
 from mappers.r4 import consent as r4_consent
 from mappers.r4 import coverage as r4_coverage
+from mappers.r4 import device as r4_device
 from mappers.r4 import diagnostic_report as r4_diagnostic_report
 from mappers.r4 import document_reference as r4_document_reference
 from mappers.r4 import encounter as r4_encounter
 from mappers.r4 import episode_of_care as r4_episode_of_care
 from mappers.r4 import family_member_history as r4_family_member_history
+from mappers.r4 import flag as r4_flag
 from mappers.r4 import goal as r4_goal
 from mappers.r4 import imaging_study as r4_imaging_study
 from mappers.r4 import immunization as r4_immunization
@@ -41,21 +45,26 @@ from mappers.r4 import procedure as r4_procedure
 from mappers.r4 import provenance as r4_provenance
 from mappers.r4 import questionnaire_response as r4_questionnaire_response
 from mappers.r4 import related_person as r4_related_person
+from mappers.r4 import risk_assessment as r4_risk_assessment
 from mappers.r4 import service_request as r4_service_request
 from mappers.r4 import specimen as r4_specimen
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import appointment as r5_appointment
+from mappers.r5 import body_structure as r5_body_structure
 from mappers.r5 import bundle as r5_bundle
 from mappers.r5 import care_plan as r5_care_plan
 from mappers.r5 import care_team as r5_care_team
+from mappers.r5 import clinical_impression as r5_clinical_impression
 from mappers.r5 import condition as r5_condition
 from mappers.r5 import consent as r5_consent
 from mappers.r5 import coverage as r5_coverage
+from mappers.r5 import device as r5_device
 from mappers.r5 import diagnostic_report as r5_diagnostic_report
 from mappers.r5 import document_reference as r5_document_reference
 from mappers.r5 import encounter as r5_encounter
 from mappers.r5 import episode_of_care as r5_episode_of_care
 from mappers.r5 import family_member_history as r5_family_member_history
+from mappers.r5 import flag as r5_flag
 from mappers.r5 import goal as r5_goal
 from mappers.r5 import imaging_study as r5_imaging_study
 from mappers.r5 import immunization as r5_immunization
@@ -75,6 +84,7 @@ from mappers.r5 import procedure as r5_procedure
 from mappers.r5 import provenance as r5_provenance
 from mappers.r5 import questionnaire_response as r5_questionnaire_response
 from mappers.r5 import related_person as r5_related_person
+from mappers.r5 import risk_assessment as r5_risk_assessment
 from mappers.r5 import service_request as r5_service_request
 from mappers.r5 import specimen as r5_specimen
 
@@ -102,6 +112,11 @@ MED_ADMIN_MAPPER = {"R4": r4_medication_administration.map_medication_administra
 SPECIMEN_MAPPER = {"R4": r4_specimen.map_specimen, "R5": r5_specimen.map_specimen}
 IMAGING_MAPPER = {"R4": r4_imaging_study.map_imaging_study, "R5": r5_imaging_study.map_imaging_study}
 QR_MAPPER = {"R4": r4_questionnaire_response.map_questionnaire_response, "R5": r5_questionnaire_response.map_questionnaire_response}
+DEVICE_MAPPER = {"R4": r4_device.map_device, "R5": r5_device.map_device}
+FLAG_MAPPER = {"R4": r4_flag.map_flag, "R5": r5_flag.map_flag}
+RISK_MAPPER = {"R4": r4_risk_assessment.map_risk_assessment, "R5": r5_risk_assessment.map_risk_assessment}
+BODY_STRUCTURE_MAPPER = {"R4": r4_body_structure.map_body_structure, "R5": r5_body_structure.map_body_structure}
+CLINICAL_IMPRESSION_MAPPER = {"R4": r4_clinical_impression.map_clinical_impression, "R5": r5_clinical_impression.map_clinical_impression}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -151,6 +166,11 @@ _ORDER: list[tuple[dict, str]] = [
     (MED_ADMIN_MAPPER, "medication_administrations"),
     (PROC_MAPPER, "procedures"),
     (SR_MAPPER, "service_requests"),
+    (BODY_STRUCTURE_MAPPER, "body_structures"),
+    (DEVICE_MAPPER, "devices"),
+    (FLAG_MAPPER, "flags"),
+    (RISK_MAPPER, "risk_assessments"),
+    (CLINICAL_IMPRESSION_MAPPER, "clinical_impressions"),
     (LIST_MAPPER, "lists"),
     (PROV_MAPPER, "provenances"),
 ]

@@ -43,16 +43,20 @@ from datetime import date, datetime
 from generators._rng import generation_scope
 from generators.allergy_gen import generate_allergies_for_patient
 from generators.appointment_gen import generate_appointment
+from generators.body_structure_gen import generate_body_structures_for_patient
 from generators.care_plan_gen import generate_care_plan
 from generators.care_team_gen import generate_care_team
+from generators.clinical_impression_gen import generate_clinical_impression_for_patient
 from generators.condition_gen import generate_conditions_for_patient
 from generators.consent_gen import generate_consents_for_patient
 from generators.coverage_gen import generate_coverage_for_patient
+from generators.device_gen import generate_devices_for_patient
 from generators.diagnostic_report_gen import generate_diagnostic_reports_for_encounter
 from generators.document_reference_gen import generate_document_reference_for_encounter
 from generators.encounter_gen import generate_encounter
 from generators.episode_of_care_gen import generate_episode_of_care
 from generators.family_member_history_gen import generate_family_member_history
+from generators.flag_gen import generate_flags_for_patient
 from generators.goal_gen import generate_goals_for_patient
 from generators.imaging_study_gen import generate_imaging_studies_for_encounters
 from generators.immunization_gen import generate_immunizations_for_patient
@@ -75,6 +79,7 @@ from generators.procedure_gen import generate_procedures_for_encounter
 from generators.provenance_gen import generate_provenance
 from generators.questionnaire_response_gen import generate_questionnaire_responses
 from generators.related_person_gen import generate_related_persons
+from generators.risk_assessment_gen import generate_risk_assessment_for_patient
 from generators.service_request_gen import (
     build_sr_basedOn_map,
     generate_service_requests_for_encounter,
@@ -173,6 +178,11 @@ def _build_cohort(
     coverages: list[dict] = []
     lists: list[dict] = []
     provenances: list[dict] = []
+    devices: list[dict] = []
+    flags: list[dict] = []
+    risk_assessments: list[dict] = []
+    body_structures: list[dict] = []
+    clinical_impressions: list[dict] = []
 
     for _ in range(count):
         patient = generate_patient(age_min=age_min, age_max=age_max)
@@ -379,6 +389,21 @@ def _build_cohort(
         medication_statements.extend(generate_statements_for_medications(pt_meds))
         medication_administrations.extend(generate_administrations_for_medications(pt_meds))
 
+        # Devices, alerts, and clinical assessments driven by the patient's problems
+        cond_keys = {c.get("condition_key") for c in pt_conditions if c.get("condition_key")}
+        first_enc_dt = pt_encounters[0]["start_datetime"] if pt_encounters else ""
+        devices.extend(generate_devices_for_patient(patient["id"], cond_keys))
+        flags.extend(generate_flags_for_patient(patient["id"], first_enc_id, cond_keys))
+        risk_assessments.extend(
+            generate_risk_assessment_for_patient(patient["id"], first_enc_id, first_enc_dt, cond_keys)
+        )
+        body_structures.extend(generate_body_structures_for_patient(patient["id"], cond_keys))
+        clinical_impressions.extend(
+            generate_clinical_impression_for_patient(
+                patient["id"], first_enc_id, first_enc_dt, pt_conditions
+            )
+        )
+
         # Lists - aggregate conditions, medications, allergies
         lists.extend(
             generate_lists_for_patient(
@@ -447,6 +472,11 @@ def _build_cohort(
         "medication_administrations": medication_administrations,
         "procedures": procedures,
         "service_requests": service_requests,
+        "devices": devices,
+        "flags": flags,
+        "risk_assessments": risk_assessments,
+        "body_structures": body_structures,
+        "clinical_impressions": clinical_impressions,
         "lists": lists,
         "provenances": provenances,
     }

@@ -350,7 +350,8 @@ _RESOURCE_TYPES = [
     "Specimen", "ImagingStudy", "QuestionnaireResponse",
     "DocumentReference", "Medication", "MedicationRequest", "MedicationDispense",
     "MedicationStatement", "MedicationAdministration", "Procedure",
-    "ServiceRequest", "CareTeam", "CarePlan", "Goal", "List",
+    "ServiceRequest", "Device", "BodyStructure", "Flag", "RiskAssessment",
+    "ClinicalImpression", "CareTeam", "CarePlan", "Goal", "List",
     "FamilyMemberHistory", "Consent", "Provenance",
 ]
 
