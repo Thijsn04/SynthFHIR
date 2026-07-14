@@ -15,6 +15,7 @@ def map_device(dev: dict, us_core: bool = False) -> dict:
         "udiCarrier": [
             {
                 "deviceIdentifier": dev["udi_di"],
+                "issuer": "https://www.gs1.org/",
                 "carrierHRF": dev["udi_carrier"],
             }
         ],

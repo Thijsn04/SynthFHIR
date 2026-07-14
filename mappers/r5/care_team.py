@@ -18,17 +18,12 @@ def map_care_team(ct: dict, us_core: bool = False) -> dict:
         "subject": ref("Patient", ct["patient_id"]),
         "participant": [
             {
-                "role": [
-                    {
-                        "coding": [
-                            {
-                                "system": "http://snomed.info/sct",
-                                "code": "309343006",
-                                "display": "Physician",
-                            }
-                        ]
-                    }
-                ],
+                # R5: participant.role is a single CodeableConcept, not a list
+                "role": {
+                    "coding": [
+                        {"system": "http://snomed.info/sct", "code": "309343006", "display": "Physician"}
+                    ]
+                },
                 "member": ref("Practitioner", pid),
             }
             for pid in ct["practitioner_ids"]

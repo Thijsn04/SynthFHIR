@@ -1,6 +1,7 @@
 """R5 Organization resource mapper. Spec: https://hl7.org/fhir/R5/organization.html
 
-R5 difference from R4: canonical profile URL only.
+R5 difference from R4: Organization.telecom and Organization.address were removed
+and folded into Organization.contact (an ExtendedContactDetail).
 """
 from mappers._helpers import build_meta
 
@@ -25,19 +26,21 @@ def map_organization(org: dict, us_core: bool = False) -> dict:
             }
         ],
         "name": org["name"],
-        "telecom": [
-            {"system": "phone", "value": org["phone"], "use": "work"},
-            {"system": "email", "value": org["email"], "use": "work"},
-        ],
-        "address": [
+        "contact": [
             {
-                "use": "work",
-                "type": "postal",
-                "line": [org["address_line"]],
-                "city": org["city"],
-                "state": org["state"],
-                "postalCode": org["postal_code"],
-                "country": org["country"],
+                "telecom": [
+                    {"system": "phone", "value": org["phone"], "use": "work"},
+                    {"system": "email", "value": org["email"], "use": "work"},
+                ],
+                "address": {
+                    "use": "work",
+                    "type": "postal",
+                    "line": [org["address_line"]],
+                    "city": org["city"],
+                    "state": org["state"],
+                    "postalCode": org["postal_code"],
+                    "country": org["country"],
+                },
             }
         ],
     }

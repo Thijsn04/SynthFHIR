@@ -1,7 +1,7 @@
 """R5 EpisodeOfCare resource mapper. Spec: https://hl7.org/fhir/R5/episodeofcare.html
 
-R5 changes: diagnosis.condition is now a CodeableReference, not a plain
-Reference - it wraps the Reference inside a .reference field.
+R5 changes: diagnosis.condition is now a list of CodeableReference (each wrapping
+the Reference inside a .reference field), and diagnosis.rank was removed.
 """
 from mappers._helpers import build_meta, ref
 
@@ -37,9 +37,9 @@ def map_episode_of_care(eoc: dict, us_core: bool = False) -> dict:
 
     if eoc.get("condition_ids"):
         resource["diagnosis"] = [
-            # R5: CodeableReference wraps the Reference inside .reference
-            {"condition": {"reference": ref("Condition", cid)}, "rank": idx + 1}
-            for idx, cid in enumerate(eoc["condition_ids"])
+            # R5: condition is a list of CodeableReference; rank was removed
+            {"condition": [{"reference": ref("Condition", cid)}]}
+            for cid in eoc["condition_ids"]
         ]
 
     return resource

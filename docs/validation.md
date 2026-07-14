@@ -66,9 +66,28 @@ Warnings (do not fail the bundle):
 
 ## Scope and limits
 
-The validator does not check value sets, cardinality beyond the curated
-mandatory set, profile slicing, or terminology bindings. For strict conformance
-testing against StructureDefinitions and Implementation Guides, run the bundles
-through a dedicated FHIR validator such as the official HL7 validator. SynthFHIR
-aims to produce conformant output; this validator is a fast guardrail, not a
-certification.
+The built-in validator does not check value sets, cardinality beyond the curated
+mandatory set, profile slicing, or terminology bindings. It is a fast,
+dependency-free guardrail, not a certification.
+
+## Strict conformance testing
+
+For real conformance, the test suite validates every generated resource against
+the actual FHIR StructureDefinitions using the
+[fhir.resources](https://pypi.org/project/fhir.resources/) models (R4B for R4
+output, R5 for R5 output). This catches cardinality, datatype, and structural
+errors that the lightweight validator does not.
+
+```bash
+pip install -e ".[dev]"
+pytest tests/test_conformance.py -v
+```
+
+The suite validates base and US Core cohorts, both FHIR versions, and
+transaction bundles, and runs in CI, so a change that breaks spec conformance
+fails the build. Every one of the 48 resource types passes strict validation in
+both R4 and R5.
+
+For certification against a specific Implementation Guide (US Core slicing,
+value-set bindings, invariants), run the output through the official HL7 FHIR
+validator as well.

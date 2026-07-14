@@ -31,7 +31,8 @@ def map_medication_administration(admin: dict, us_core: bool = False) -> dict:
     if admin.get("encounter_id"):
         resource["encounter"] = ref("Encounter", admin["encounter_id"])
     if admin.get("practitioner_id"):
-        resource["performer"] = [{"actor": ref("Practitioner", admin["practitioner_id"])}]
+        # R5: performer.actor is a CodeableReference (Reference lives under .reference)
+        resource["performer"] = [{"actor": {"reference": ref("Practitioner", admin["practitioner_id"])}}]
     if admin.get("dose_value") is not None:
         resource["dosage"] = {
             "dose": {

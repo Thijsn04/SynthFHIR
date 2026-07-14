@@ -16,7 +16,9 @@ def map_communication(comm: dict, us_core: bool = False) -> dict:
         ],
         "subject": ref("Patient", comm["patient_id"]),
         "sent": comm["sent"],
-        "payload": [{"contentString": comm["payload"]}],
+        # R5 removed payload.contentString; content[x] is Attachment, Reference,
+        # or CodeableConcept.
+        "payload": [{"contentCodeableConcept": {"text": comm["payload"]}}],
     }
     if comm.get("sender_id"):
         resource["sender"] = ref("Practitioner", comm["sender_id"])

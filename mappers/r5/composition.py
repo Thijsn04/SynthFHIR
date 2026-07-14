@@ -25,7 +25,7 @@ def map_composition(comp: dict, us_core: bool = False) -> dict:
         "type": {
             "coding": [{"system": _LOINC, "code": "34133-9", "display": "Summarization of episode note"}]
         },
-        "subject": ref("Patient", comp["patient_id"]),
+        "subject": [ref("Patient", comp["patient_id"])],
         "date": comp["date"],
         "author": [ref("Practitioner", comp["author_id"])],
         "title": comp["title"],

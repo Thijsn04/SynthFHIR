@@ -5,11 +5,10 @@ _PROFILE = "http://hl7.org/fhir/StructureDefinition/Claim"
 _CLAIM_TYPE = "http://terminology.hl7.org/CodeSystem/claim-type"
 _PRIORITY = "http://terminology.hl7.org/CodeSystem/processpriority"
 _CPT = "http://www.ama-assn.org/go/cpt"
-_CURRENCY = "urn:iso:std:iso:4217"
 
 
 def _money(value: float) -> dict:
-    return {"value": value, "currency": "USD", "system": _CURRENCY, "code": "USD"}
+    return {"value": value, "currency": "USD"}
 
 
 def map_claim(claim: dict, us_core: bool = False) -> dict:

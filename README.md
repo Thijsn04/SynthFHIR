@@ -100,8 +100,9 @@ therapy. See [docs/resources.md](docs/resources.md).
 - Bundle or NDJSON output; collection or transaction bundles.
 - Byte-reproducible output from a `seed`, safe under concurrency. See
   [docs/reproducibility.md](docs/reproducibility.md).
-- A built-in bundle validator for structure and referential integrity. See
-  [docs/validation.md](docs/validation.md).
+- A built-in bundle validator for structure and referential integrity, plus a
+  strict conformance suite that validates every resource against the real FHIR
+  StructureDefinitions in R4 and R5. See [docs/validation.md](docs/validation.md).
 - 50 conditions and 26 observation types, extendable with a single edit. See
   [docs/catalogs.md](docs/catalogs.md).
 

@@ -5,11 +5,10 @@ _PROFILE = "http://hl7.org/fhir/StructureDefinition/ExplanationOfBenefit"
 _CLAIM_TYPE = "http://terminology.hl7.org/CodeSystem/claim-type"
 _ADJUDICATION = "http://terminology.hl7.org/CodeSystem/adjudication"
 _CPT = "http://www.ama-assn.org/go/cpt"
-_CURRENCY = "urn:iso:std:iso:4217"
 
 
 def _money(value: float) -> dict:
-    return {"value": value, "currency": "USD", "system": _CURRENCY, "code": "USD"}
+    return {"value": value, "currency": "USD"}
 
 
 def _adjudication(code: str, display: str, value: float) -> dict:

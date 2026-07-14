@@ -59,20 +59,24 @@ def map_encounter(enc: dict, us_core: bool = False) -> dict:
         "serviceProvider": ref("Organization", enc["organization_id"]),
     }
 
-    # R5: reasonCode replaced by reason[].concept (CodeableReference)
+    # R5: reasonCode replaced by reason[].value[] (a list of CodeableReference)
     if enc.get("reason_codes"):
         resource["reason"] = [
             {
-                "concept": {
-                    "coding": [
-                        {
-                            "system": "http://snomed.info/sct",
-                            "code": rc["snomed_code"],
-                            "display": rc["display"],
+                "value": [
+                    {
+                        "concept": {
+                            "coding": [
+                                {
+                                    "system": "http://snomed.info/sct",
+                                    "code": rc["snomed_code"],
+                                    "display": rc["display"],
+                                }
+                            ],
+                            "text": rc["display"],
                         }
-                    ],
-                    "text": rc["display"],
-                }
+                    }
+                ]
             }
             for rc in enc["reason_codes"]
         ]

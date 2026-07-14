@@ -69,7 +69,7 @@ def map_coverage(cov: dict, us_core: bool = False) -> dict:
                         }
                     ]
                 },
-                "value": cov["class_value"],
+                "value": {"value": cov["class_value"]},
                 "name": cov["plan_name"],
             }
         ],
