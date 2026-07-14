@@ -27,7 +27,10 @@ from mappers.r4 import immunization as r4_immunization
 from mappers.r4 import list as r4_list
 from mappers.r4 import location as r4_location
 from mappers.r4 import medication as r4_medication
+from mappers.r4 import medication_administration as r4_medication_administration
 from mappers.r4 import medication_dispense as r4_medication_dispense
+from mappers.r4 import medication_resource as r4_medication_resource
+from mappers.r4 import medication_statement as r4_medication_statement
 from mappers.r4 import observation as r4_observation
 from mappers.r4 import organization as r4_organization
 from mappers.r4 import patient as r4_patient
@@ -55,7 +58,10 @@ from mappers.r5 import immunization as r5_immunization
 from mappers.r5 import list as r5_list
 from mappers.r5 import location as r5_location
 from mappers.r5 import medication as r5_medication
+from mappers.r5 import medication_administration as r5_medication_administration
 from mappers.r5 import medication_dispense as r5_medication_dispense
+from mappers.r5 import medication_resource as r5_medication_resource
+from mappers.r5 import medication_statement as r5_medication_statement
 from mappers.r5 import observation as r5_observation
 from mappers.r5 import organization as r5_organization
 from mappers.r5 import patient as r5_patient
@@ -84,6 +90,9 @@ IMM_MAPPER = {"R4": r4_immunization.map_immunization, "R5": r5_immunization.map_
 DR_MAPPER = {"R4": r4_diagnostic_report.map_diagnostic_report, "R5": r5_diagnostic_report.map_diagnostic_report}
 DOC_REF_MAPPER = {"R4": r4_document_reference.map_document_reference, "R5": r5_document_reference.map_document_reference}
 MED_DISP_MAPPER = {"R4": r4_medication_dispense.map_medication_dispense, "R5": r5_medication_dispense.map_medication_dispense}
+MEDICATION_MAPPER = {"R4": r4_medication_resource.map_medication_resource, "R5": r5_medication_resource.map_medication_resource}
+MED_STMT_MAPPER = {"R4": r4_medication_statement.map_medication_statement, "R5": r5_medication_statement.map_medication_statement}
+MED_ADMIN_MAPPER = {"R4": r4_medication_administration.map_medication_administration, "R5": r5_medication_administration.map_medication_administration}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -123,8 +132,11 @@ _ORDER: list[tuple[dict, str]] = [
     (OBS_MAPPER, "observations"),
     (DR_MAPPER, "diagnostic_reports"),
     (DOC_REF_MAPPER, "document_references"),
+    (MEDICATION_MAPPER, "medication_catalog"),
     (MED_MAPPER, "medications"),
     (MED_DISP_MAPPER, "medication_dispenses"),
+    (MED_STMT_MAPPER, "medication_statements"),
+    (MED_ADMIN_MAPPER, "medication_administrations"),
     (PROC_MAPPER, "procedures"),
     (SR_MAPPER, "service_requests"),
     (LIST_MAPPER, "lists"),

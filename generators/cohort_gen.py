@@ -57,8 +57,11 @@ from generators.goal_gen import generate_goals_for_patient
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.list_gen import generate_lists_for_patient
 from generators.location_gen import generate_locations_for_organization
+from generators.medication_administration_gen import generate_administrations_for_medications
 from generators.medication_dispense_gen import generate_dispenses_for_medications
 from generators.medication_gen import generate_medications_for_patient
+from generators.medication_resource_gen import generate_medications_catalog
+from generators.medication_statement_gen import generate_statements_for_medications
 from generators.observation_gen import (
     generate_observations_for_encounter,
     update_obs_baseline_for_conditions,
@@ -160,6 +163,8 @@ def _build_cohort(
     document_references: list[dict] = []
     medications: list[dict] = []
     medication_dispenses: list[dict] = []
+    medication_statements: list[dict] = []
+    medication_administrations: list[dict] = []
     procedures: list[dict] = []
     service_requests: list[dict] = []
     coverages: list[dict] = []
@@ -367,6 +372,10 @@ def _build_cohort(
         # MedicationDispense: pharmacy fills for most prescriptions
         medication_dispenses.extend(generate_dispenses_for_medications(pt_meds))
 
+        # MedicationStatement and MedicationAdministration derived from the meds
+        medication_statements.extend(generate_statements_for_medications(pt_meds))
+        medication_administrations.extend(generate_administrations_for_medications(pt_meds))
+
         # Lists - aggregate conditions, medications, allergies
         lists.extend(
             generate_lists_for_patient(
@@ -394,6 +403,9 @@ def _build_cohort(
             )
         )
 
+    # Cohort-wide Medication catalog: one resource per distinct drug prescribed.
+    medication_catalog = generate_medications_catalog(medications)
+
     return {
         "organizations": organizations,
         "locations": locations,
@@ -416,8 +428,11 @@ def _build_cohort(
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
         "document_references": document_references,
+        "medication_catalog": medication_catalog,
         "medications": medications,
         "medication_dispenses": medication_dispenses,
+        "medication_statements": medication_statements,
+        "medication_administrations": medication_administrations,
         "procedures": procedures,
         "service_requests": service_requests,
         "lists": lists,
