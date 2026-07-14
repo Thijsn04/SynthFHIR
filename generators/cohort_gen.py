@@ -41,11 +41,13 @@ import random
 from datetime import date, datetime
 
 from generators._rng import generation_scope
+from generators.account_gen import generate_account_for_patient
 from generators.allergy_gen import generate_allergies_for_patient
 from generators.appointment_gen import generate_appointment
 from generators.body_structure_gen import generate_body_structures_for_patient
 from generators.care_plan_gen import generate_care_plan
 from generators.care_team_gen import generate_care_team
+from generators.claim_gen import generate_claims_for_encounters
 from generators.clinical_impression_gen import generate_clinical_impression_for_patient
 from generators.condition_gen import generate_conditions_for_patient
 from generators.consent_gen import generate_consents_for_patient
@@ -55,6 +57,7 @@ from generators.diagnostic_report_gen import generate_diagnostic_reports_for_enc
 from generators.document_reference_gen import generate_document_reference_for_encounter
 from generators.encounter_gen import generate_encounter
 from generators.episode_of_care_gen import generate_episode_of_care
+from generators.explanation_of_benefit_gen import generate_eobs_for_claims
 from generators.family_member_history_gen import generate_family_member_history
 from generators.flag_gen import generate_flags_for_patient
 from generators.goal_gen import generate_goals_for_patient
@@ -183,6 +186,7 @@ def _build_cohort(
     risk_assessments: list[dict] = []
     body_structures: list[dict] = []
     clinical_impressions: list[dict] = []
+    accounts: list[dict] = []
 
     for _ in range(count):
         patient = generate_patient(age_min=age_min, age_max=age_max)
@@ -404,6 +408,13 @@ def _build_cohort(
             )
         )
 
+        # Billing account, one per patient
+        accounts.append(
+            generate_account_for_patient(
+                patient["id"], org_id, f"{patient['first_name']} {patient['last_name']}"
+            )
+        )
+
         # Lists - aggregate conditions, medications, allergies
         lists.extend(
             generate_lists_for_patient(
@@ -439,6 +450,11 @@ def _build_cohort(
     specimens = generate_specimens_for_reports(diagnostic_reports)
     imaging_studies = generate_imaging_studies_for_encounters(encounters)
     questionnaire_responses = generate_questionnaire_responses(observations)
+
+    # Financial: a Claim per encounter and an ExplanationOfBenefit per Claim.
+    coverage_by_patient = {c["patient_id"]: c["id"] for c in coverages}
+    claims = generate_claims_for_encounters(encounters, coverage_by_patient)
+    explanations_of_benefit = generate_eobs_for_claims(claims)
 
     return {
         "organizations": organizations,
@@ -477,6 +493,9 @@ def _build_cohort(
         "risk_assessments": risk_assessments,
         "body_structures": body_structures,
         "clinical_impressions": clinical_impressions,
+        "accounts": accounts,
+        "claims": claims,
+        "explanations_of_benefit": explanations_of_benefit,
         "lists": lists,
         "provenances": provenances,
     }

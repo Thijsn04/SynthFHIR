@@ -9,12 +9,14 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 
+from mappers.r4 import account as r4_account
 from mappers.r4 import allergy as r4_allergy
 from mappers.r4 import appointment as r4_appointment
 from mappers.r4 import body_structure as r4_body_structure
 from mappers.r4 import bundle as r4_bundle
 from mappers.r4 import care_plan as r4_care_plan
 from mappers.r4 import care_team as r4_care_team
+from mappers.r4 import claim as r4_claim
 from mappers.r4 import clinical_impression as r4_clinical_impression
 from mappers.r4 import condition as r4_condition
 from mappers.r4 import consent as r4_consent
@@ -24,6 +26,7 @@ from mappers.r4 import diagnostic_report as r4_diagnostic_report
 from mappers.r4 import document_reference as r4_document_reference
 from mappers.r4 import encounter as r4_encounter
 from mappers.r4 import episode_of_care as r4_episode_of_care
+from mappers.r4 import explanation_of_benefit as r4_explanation_of_benefit
 from mappers.r4 import family_member_history as r4_family_member_history
 from mappers.r4 import flag as r4_flag
 from mappers.r4 import goal as r4_goal
@@ -48,12 +51,14 @@ from mappers.r4 import related_person as r4_related_person
 from mappers.r4 import risk_assessment as r4_risk_assessment
 from mappers.r4 import service_request as r4_service_request
 from mappers.r4 import specimen as r4_specimen
+from mappers.r5 import account as r5_account
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import appointment as r5_appointment
 from mappers.r5 import body_structure as r5_body_structure
 from mappers.r5 import bundle as r5_bundle
 from mappers.r5 import care_plan as r5_care_plan
 from mappers.r5 import care_team as r5_care_team
+from mappers.r5 import claim as r5_claim
 from mappers.r5 import clinical_impression as r5_clinical_impression
 from mappers.r5 import condition as r5_condition
 from mappers.r5 import consent as r5_consent
@@ -63,6 +68,7 @@ from mappers.r5 import diagnostic_report as r5_diagnostic_report
 from mappers.r5 import document_reference as r5_document_reference
 from mappers.r5 import encounter as r5_encounter
 from mappers.r5 import episode_of_care as r5_episode_of_care
+from mappers.r5 import explanation_of_benefit as r5_explanation_of_benefit
 from mappers.r5 import family_member_history as r5_family_member_history
 from mappers.r5 import flag as r5_flag
 from mappers.r5 import goal as r5_goal
@@ -117,6 +123,9 @@ FLAG_MAPPER = {"R4": r4_flag.map_flag, "R5": r5_flag.map_flag}
 RISK_MAPPER = {"R4": r4_risk_assessment.map_risk_assessment, "R5": r5_risk_assessment.map_risk_assessment}
 BODY_STRUCTURE_MAPPER = {"R4": r4_body_structure.map_body_structure, "R5": r5_body_structure.map_body_structure}
 CLINICAL_IMPRESSION_MAPPER = {"R4": r4_clinical_impression.map_clinical_impression, "R5": r5_clinical_impression.map_clinical_impression}
+ACCOUNT_MAPPER = {"R4": r4_account.map_account, "R5": r5_account.map_account}
+CLAIM_MAPPER = {"R4": r4_claim.map_claim, "R5": r5_claim.map_claim}
+EOB_MAPPER = {"R4": r4_explanation_of_benefit.map_explanation_of_benefit, "R5": r5_explanation_of_benefit.map_explanation_of_benefit}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -171,6 +180,9 @@ _ORDER: list[tuple[dict, str]] = [
     (FLAG_MAPPER, "flags"),
     (RISK_MAPPER, "risk_assessments"),
     (CLINICAL_IMPRESSION_MAPPER, "clinical_impressions"),
+    (ACCOUNT_MAPPER, "accounts"),
+    (CLAIM_MAPPER, "claims"),
+    (EOB_MAPPER, "explanations_of_benefit"),
     (LIST_MAPPER, "lists"),
     (PROV_MAPPER, "provenances"),
 ]
