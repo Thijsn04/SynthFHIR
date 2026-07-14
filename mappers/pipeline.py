@@ -18,6 +18,8 @@ from mappers.r4 import care_plan as r4_care_plan
 from mappers.r4 import care_team as r4_care_team
 from mappers.r4 import claim as r4_claim
 from mappers.r4 import clinical_impression as r4_clinical_impression
+from mappers.r4 import communication as r4_communication
+from mappers.r4 import composition as r4_composition
 from mappers.r4 import condition as r4_condition
 from mappers.r4 import consent as r4_consent
 from mappers.r4 import coverage as r4_coverage
@@ -30,6 +32,7 @@ from mappers.r4 import explanation_of_benefit as r4_explanation_of_benefit
 from mappers.r4 import family_member_history as r4_family_member_history
 from mappers.r4 import flag as r4_flag
 from mappers.r4 import goal as r4_goal
+from mappers.r4 import group as r4_group
 from mappers.r4 import imaging_study as r4_imaging_study
 from mappers.r4 import immunization as r4_immunization
 from mappers.r4 import list as r4_list
@@ -39,6 +42,7 @@ from mappers.r4 import medication_administration as r4_medication_administration
 from mappers.r4 import medication_dispense as r4_medication_dispense
 from mappers.r4 import medication_resource as r4_medication_resource
 from mappers.r4 import medication_statement as r4_medication_statement
+from mappers.r4 import nutrition_order as r4_nutrition_order
 from mappers.r4 import observation as r4_observation
 from mappers.r4 import organization as r4_organization
 from mappers.r4 import patient as r4_patient
@@ -49,8 +53,11 @@ from mappers.r4 import provenance as r4_provenance
 from mappers.r4 import questionnaire_response as r4_questionnaire_response
 from mappers.r4 import related_person as r4_related_person
 from mappers.r4 import risk_assessment as r4_risk_assessment
+from mappers.r4 import schedule as r4_schedule
 from mappers.r4 import service_request as r4_service_request
+from mappers.r4 import slot as r4_slot
 from mappers.r4 import specimen as r4_specimen
+from mappers.r4 import task as r4_task
 from mappers.r5 import account as r5_account
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import appointment as r5_appointment
@@ -60,6 +67,8 @@ from mappers.r5 import care_plan as r5_care_plan
 from mappers.r5 import care_team as r5_care_team
 from mappers.r5 import claim as r5_claim
 from mappers.r5 import clinical_impression as r5_clinical_impression
+from mappers.r5 import communication as r5_communication
+from mappers.r5 import composition as r5_composition
 from mappers.r5 import condition as r5_condition
 from mappers.r5 import consent as r5_consent
 from mappers.r5 import coverage as r5_coverage
@@ -72,6 +81,7 @@ from mappers.r5 import explanation_of_benefit as r5_explanation_of_benefit
 from mappers.r5 import family_member_history as r5_family_member_history
 from mappers.r5 import flag as r5_flag
 from mappers.r5 import goal as r5_goal
+from mappers.r5 import group as r5_group
 from mappers.r5 import imaging_study as r5_imaging_study
 from mappers.r5 import immunization as r5_immunization
 from mappers.r5 import list as r5_list
@@ -81,6 +91,7 @@ from mappers.r5 import medication_administration as r5_medication_administration
 from mappers.r5 import medication_dispense as r5_medication_dispense
 from mappers.r5 import medication_resource as r5_medication_resource
 from mappers.r5 import medication_statement as r5_medication_statement
+from mappers.r5 import nutrition_order as r5_nutrition_order
 from mappers.r5 import observation as r5_observation
 from mappers.r5 import organization as r5_organization
 from mappers.r5 import patient as r5_patient
@@ -91,8 +102,11 @@ from mappers.r5 import provenance as r5_provenance
 from mappers.r5 import questionnaire_response as r5_questionnaire_response
 from mappers.r5 import related_person as r5_related_person
 from mappers.r5 import risk_assessment as r5_risk_assessment
+from mappers.r5 import schedule as r5_schedule
 from mappers.r5 import service_request as r5_service_request
+from mappers.r5 import slot as r5_slot
 from mappers.r5 import specimen as r5_specimen
+from mappers.r5 import task as r5_task
 
 # ---------------------------------------------------------------------------
 # Version dispatch tables, indexed by FHIR version string ("R4" or "R5").
@@ -126,6 +140,13 @@ CLINICAL_IMPRESSION_MAPPER = {"R4": r4_clinical_impression.map_clinical_impressi
 ACCOUNT_MAPPER = {"R4": r4_account.map_account, "R5": r5_account.map_account}
 CLAIM_MAPPER = {"R4": r4_claim.map_claim, "R5": r5_claim.map_claim}
 EOB_MAPPER = {"R4": r4_explanation_of_benefit.map_explanation_of_benefit, "R5": r5_explanation_of_benefit.map_explanation_of_benefit}
+NUTRITION_MAPPER = {"R4": r4_nutrition_order.map_nutrition_order, "R5": r5_nutrition_order.map_nutrition_order}
+TASK_MAPPER = {"R4": r4_task.map_task, "R5": r5_task.map_task}
+COMMUNICATION_MAPPER = {"R4": r4_communication.map_communication, "R5": r5_communication.map_communication}
+SCHEDULE_MAPPER = {"R4": r4_schedule.map_schedule, "R5": r5_schedule.map_schedule}
+SLOT_MAPPER = {"R4": r4_slot.map_slot, "R5": r5_slot.map_slot}
+COMPOSITION_MAPPER = {"R4": r4_composition.map_composition, "R5": r5_composition.map_composition}
+GROUP_MAPPER = {"R4": r4_group.map_group, "R5": r5_group.map_group}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -183,6 +204,13 @@ _ORDER: list[tuple[dict, str]] = [
     (ACCOUNT_MAPPER, "accounts"),
     (CLAIM_MAPPER, "claims"),
     (EOB_MAPPER, "explanations_of_benefit"),
+    (NUTRITION_MAPPER, "nutrition_orders"),
+    (TASK_MAPPER, "tasks"),
+    (COMMUNICATION_MAPPER, "communications"),
+    (SCHEDULE_MAPPER, "schedules"),
+    (SLOT_MAPPER, "slots"),
+    (COMPOSITION_MAPPER, "compositions"),
+    (GROUP_MAPPER, "groups"),
     (LIST_MAPPER, "lists"),
     (PROV_MAPPER, "provenances"),
 ]

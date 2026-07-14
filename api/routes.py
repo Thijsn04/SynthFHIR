@@ -352,7 +352,8 @@ _RESOURCE_TYPES = [
     "MedicationStatement", "MedicationAdministration", "Procedure",
     "ServiceRequest", "Device", "BodyStructure", "Flag", "RiskAssessment",
     "ClinicalImpression", "Account", "Claim", "ExplanationOfBenefit",
-    "CareTeam", "CarePlan", "Goal", "List",
+    "NutritionOrder", "Task", "Communication", "Schedule", "Slot",
+    "Composition", "Group", "CareTeam", "CarePlan", "Goal", "List",
     "FamilyMemberHistory", "Consent", "Provenance",
 ]
 

@@ -49,6 +49,8 @@ from generators.care_plan_gen import generate_care_plan
 from generators.care_team_gen import generate_care_team
 from generators.claim_gen import generate_claims_for_encounters
 from generators.clinical_impression_gen import generate_clinical_impression_for_patient
+from generators.communication_gen import generate_communication_for_patient
+from generators.composition_gen import generate_composition_for_patient
 from generators.condition_gen import generate_conditions_for_patient
 from generators.consent_gen import generate_consents_for_patient
 from generators.coverage_gen import generate_coverage_for_patient
@@ -61,6 +63,7 @@ from generators.explanation_of_benefit_gen import generate_eobs_for_claims
 from generators.family_member_history_gen import generate_family_member_history
 from generators.flag_gen import generate_flags_for_patient
 from generators.goal_gen import generate_goals_for_patient
+from generators.group_gen import generate_cohort_group
 from generators.imaging_study_gen import generate_imaging_studies_for_encounters
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.list_gen import generate_lists_for_patient
@@ -70,6 +73,7 @@ from generators.medication_dispense_gen import generate_dispenses_for_medication
 from generators.medication_gen import generate_medications_for_patient
 from generators.medication_resource_gen import generate_medications_catalog
 from generators.medication_statement_gen import generate_statements_for_medications
+from generators.nutrition_order_gen import generate_nutrition_order_for_patient
 from generators.observation_gen import (
     generate_observations_for_encounter,
     update_obs_baseline_for_conditions,
@@ -83,11 +87,13 @@ from generators.provenance_gen import generate_provenance
 from generators.questionnaire_response_gen import generate_questionnaire_responses
 from generators.related_person_gen import generate_related_persons
 from generators.risk_assessment_gen import generate_risk_assessment_for_patient
+from generators.scheduling_gen import generate_schedules_and_slots
 from generators.service_request_gen import (
     build_sr_basedOn_map,
     generate_service_requests_for_encounter,
 )
 from generators.specimen_gen import generate_specimens_for_reports
+from generators.task_gen import generate_task_for_patient
 
 _BASE_ENC_PER_YEAR = 2   # baseline encounter rate per patient-year
 _MAX_ENC_CAP = 20        # hard ceiling regardless of years
@@ -187,6 +193,10 @@ def _build_cohort(
     body_structures: list[dict] = []
     clinical_impressions: list[dict] = []
     accounts: list[dict] = []
+    tasks: list[dict] = []
+    nutrition_orders: list[dict] = []
+    communications: list[dict] = []
+    compositions: list[dict] = []
 
     for _ in range(count):
         patient = generate_patient(age_min=age_min, age_max=age_max)
@@ -415,6 +425,22 @@ def _build_cohort(
             )
         )
 
+        # Workflow, diet, messaging, and a summary document
+        tasks.extend(
+            generate_task_for_patient(patient["id"], first_enc_id, prac_id, first_enc_dt[:10])
+        )
+        nutrition_orders.extend(
+            generate_nutrition_order_for_patient(patient["id"], first_enc_id, first_enc_dt, cond_keys)
+        )
+        communications.extend(
+            generate_communication_for_patient(patient["id"], first_enc_id, prac_id, first_enc_dt)
+        )
+        compositions.extend(
+            generate_composition_for_patient(
+                patient["id"], first_enc_id, prac_id, org_id, first_enc_dt, pt_conditions
+            )
+        )
+
         # Lists - aggregate conditions, medications, allergies
         lists.extend(
             generate_lists_for_patient(
@@ -456,6 +482,10 @@ def _build_cohort(
     claims = generate_claims_for_encounters(encounters, coverage_by_patient)
     explanations_of_benefit = generate_eobs_for_claims(claims)
 
+    # Scheduling surface and a cohort Group.
+    schedules, slots = generate_schedules_and_slots(practitioners)
+    groups = generate_cohort_group(patients)
+
     return {
         "organizations": organizations,
         "locations": locations,
@@ -496,6 +526,13 @@ def _build_cohort(
         "accounts": accounts,
         "claims": claims,
         "explanations_of_benefit": explanations_of_benefit,
+        "nutrition_orders": nutrition_orders,
+        "tasks": tasks,
+        "communications": communications,
+        "schedules": schedules,
+        "slots": slots,
+        "compositions": compositions,
+        "groups": groups,
         "lists": lists,
         "provenances": provenances,
     }
