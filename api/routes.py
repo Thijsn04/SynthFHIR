@@ -347,6 +347,7 @@ _RESOURCE_TYPES = [
     "Patient", "Practitioner", "PractitionerRole", "Organization", "Location",
     "RelatedPerson", "Condition", "AllergyIntolerance", "Immunization", "Coverage",
     "Encounter", "Appointment", "EpisodeOfCare", "Observation", "DiagnosticReport",
+    "Specimen", "ImagingStudy", "QuestionnaireResponse",
     "DocumentReference", "Medication", "MedicationRequest", "MedicationDispense",
     "MedicationStatement", "MedicationAdministration", "Procedure",
     "ServiceRequest", "CareTeam", "CarePlan", "Goal", "List",

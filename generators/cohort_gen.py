@@ -54,6 +54,7 @@ from generators.encounter_gen import generate_encounter
 from generators.episode_of_care_gen import generate_episode_of_care
 from generators.family_member_history_gen import generate_family_member_history
 from generators.goal_gen import generate_goals_for_patient
+from generators.imaging_study_gen import generate_imaging_studies_for_encounters
 from generators.immunization_gen import generate_immunizations_for_patient
 from generators.list_gen import generate_lists_for_patient
 from generators.location_gen import generate_locations_for_organization
@@ -72,11 +73,13 @@ from generators.practitioner_gen import generate_practitioner
 from generators.practitioner_role_gen import generate_practitioner_role
 from generators.procedure_gen import generate_procedures_for_encounter
 from generators.provenance_gen import generate_provenance
+from generators.questionnaire_response_gen import generate_questionnaire_responses
 from generators.related_person_gen import generate_related_persons
 from generators.service_request_gen import (
     build_sr_basedOn_map,
     generate_service_requests_for_encounter,
 )
+from generators.specimen_gen import generate_specimens_for_reports
 
 _BASE_ENC_PER_YEAR = 2   # baseline encounter rate per patient-year
 _MAX_ENC_CAP = 20        # hard ceiling regardless of years
@@ -406,6 +409,12 @@ def _build_cohort(
     # Cohort-wide Medication catalog: one resource per distinct drug prescribed.
     medication_catalog = generate_medications_catalog(medications)
 
+    # Diagnostics: specimens per lab report, imaging per encounter, and
+    # QuestionnaireResponses for the survey observations.
+    specimens = generate_specimens_for_reports(diagnostic_reports)
+    imaging_studies = generate_imaging_studies_for_encounters(encounters)
+    questionnaire_responses = generate_questionnaire_responses(observations)
+
     return {
         "organizations": organizations,
         "locations": locations,
@@ -427,6 +436,9 @@ def _build_cohort(
         "episodes_of_care": episodes_of_care,
         "observations": observations,
         "diagnostic_reports": diagnostic_reports,
+        "specimens": specimens,
+        "imaging_studies": imaging_studies,
+        "questionnaire_responses": questionnaire_responses,
         "document_references": document_references,
         "medication_catalog": medication_catalog,
         "medications": medications,

@@ -23,6 +23,7 @@ from mappers.r4 import encounter as r4_encounter
 from mappers.r4 import episode_of_care as r4_episode_of_care
 from mappers.r4 import family_member_history as r4_family_member_history
 from mappers.r4 import goal as r4_goal
+from mappers.r4 import imaging_study as r4_imaging_study
 from mappers.r4 import immunization as r4_immunization
 from mappers.r4 import list as r4_list
 from mappers.r4 import location as r4_location
@@ -38,8 +39,10 @@ from mappers.r4 import practitioner as r4_practitioner
 from mappers.r4 import practitioner_role as r4_practitioner_role
 from mappers.r4 import procedure as r4_procedure
 from mappers.r4 import provenance as r4_provenance
+from mappers.r4 import questionnaire_response as r4_questionnaire_response
 from mappers.r4 import related_person as r4_related_person
 from mappers.r4 import service_request as r4_service_request
+from mappers.r4 import specimen as r4_specimen
 from mappers.r5 import allergy as r5_allergy
 from mappers.r5 import appointment as r5_appointment
 from mappers.r5 import bundle as r5_bundle
@@ -54,6 +57,7 @@ from mappers.r5 import encounter as r5_encounter
 from mappers.r5 import episode_of_care as r5_episode_of_care
 from mappers.r5 import family_member_history as r5_family_member_history
 from mappers.r5 import goal as r5_goal
+from mappers.r5 import imaging_study as r5_imaging_study
 from mappers.r5 import immunization as r5_immunization
 from mappers.r5 import list as r5_list
 from mappers.r5 import location as r5_location
@@ -69,8 +73,10 @@ from mappers.r5 import practitioner as r5_practitioner
 from mappers.r5 import practitioner_role as r5_practitioner_role
 from mappers.r5 import procedure as r5_procedure
 from mappers.r5 import provenance as r5_provenance
+from mappers.r5 import questionnaire_response as r5_questionnaire_response
 from mappers.r5 import related_person as r5_related_person
 from mappers.r5 import service_request as r5_service_request
+from mappers.r5 import specimen as r5_specimen
 
 # ---------------------------------------------------------------------------
 # Version dispatch tables, indexed by FHIR version string ("R4" or "R5").
@@ -93,6 +99,9 @@ MED_DISP_MAPPER = {"R4": r4_medication_dispense.map_medication_dispense, "R5": r
 MEDICATION_MAPPER = {"R4": r4_medication_resource.map_medication_resource, "R5": r5_medication_resource.map_medication_resource}
 MED_STMT_MAPPER = {"R4": r4_medication_statement.map_medication_statement, "R5": r5_medication_statement.map_medication_statement}
 MED_ADMIN_MAPPER = {"R4": r4_medication_administration.map_medication_administration, "R5": r5_medication_administration.map_medication_administration}
+SPECIMEN_MAPPER = {"R4": r4_specimen.map_specimen, "R5": r5_specimen.map_specimen}
+IMAGING_MAPPER = {"R4": r4_imaging_study.map_imaging_study, "R5": r5_imaging_study.map_imaging_study}
+QR_MAPPER = {"R4": r4_questionnaire_response.map_questionnaire_response, "R5": r5_questionnaire_response.map_questionnaire_response}
 PROC_MAPPER = {"R4": r4_procedure.map_procedure, "R5": r5_procedure.map_procedure}
 SR_MAPPER = {"R4": r4_service_request.map_service_request, "R5": r5_service_request.map_service_request}
 COV_MAPPER = {"R4": r4_coverage.map_coverage, "R5": r5_coverage.map_coverage}
@@ -131,6 +140,9 @@ _ORDER: list[tuple[dict, str]] = [
     (EOC_MAPPER, "episodes_of_care"),
     (OBS_MAPPER, "observations"),
     (DR_MAPPER, "diagnostic_reports"),
+    (SPECIMEN_MAPPER, "specimens"),
+    (IMAGING_MAPPER, "imaging_studies"),
+    (QR_MAPPER, "questionnaire_responses"),
     (DOC_REF_MAPPER, "document_references"),
     (MEDICATION_MAPPER, "medication_catalog"),
     (MED_MAPPER, "medications"),
